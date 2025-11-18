@@ -1,0 +1,13 @@
+id,f1,f2,fonte,f3,f4
+sol_1,1990.7,4.0,pw,0.636,0.712
+sol_2,1990.7,4.0,pw,0.672,0.738
+sol_3,1990.7,4.0,pw,0.677,0.686
+sol_4,1990.7,4.0,pw,0.796,0.722
+sol_5,1990.7,4.0,pw,0.726,0.686
+sol_ext_1,1800.0,6.0,sintetica_extrema,0.786,0.818
+sol_bal_1,2414.9,2.0,sintetica_balanceada,0.54,0.654
+sol_bal_2,2320.9,2.5,sintetica_balanceada,0.596,0.631
+sol_bal_8,1898.0,5.5,sintetica_balanceada,0.75,0.823
+sol_int_1,2176.5,3.0,sintetica_intermediaria,0.663,0.654
+sol_int_3,2116.8,3.6,sintetica_intermediaria,0.73,0.655
+sol_int_6,1954.3,4.5,sintetica_intermediaria,0.753,0.666

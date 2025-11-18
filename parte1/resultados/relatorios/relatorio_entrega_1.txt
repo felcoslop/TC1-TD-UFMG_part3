@@ -70,9 +70,9 @@ iii. RESULTADOS DA OTIMIZACAO MONO-OBJETIVO:
 
 Funcao f1 (Minimizacao da Distancia Total):
 - Minimo: 634.83 km
-- Maximo: 1051.51 km
-- Media: 805.28 km
-- Desvio Padrao: 178.35 km
+- Maximo: 729.49 km
+- Media: 666.39 km
+- Desvio Padrao: 44.62 km
 
 Funcao f2 (Minimizacao do Numero de Equipes):
 - Minimo: 1 equipes

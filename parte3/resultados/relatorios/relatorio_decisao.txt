@@ -1,0 +1,156 @@
+================================================================================
+RELATÓRIO DE TOMADA DE DECISÃO MULTICRITÉRIO
+Trabalho Computacional 1 - Teoria da Decisão
+================================================================================
+Data de geração: 18/11/2025 12:56:47
+
+============================================================
+1. RESUMO DOS DADOS DE DECISÃO
+============================================================
+Número de soluções candidatas: 12
+
+ESTATÍSTICAS DOS CRITÉRIOS:
+----------------------------------------
+Distância Total (km) (Minimizar):
+  Mínimo: 1800.00
+  Máximo: 2414.90
+  Média: 2052.91
+  Desvio: 175.61
+
+Número de Equipes (Minimizar):
+  Mínimo: 2.00
+  Máximo: 6.00
+  Média: 3.93
+  Desvio: 1.12
+
+Confiabilidade (%) (Maximizar):
+  Mínimo: 0.54
+  Máximo: 0.80
+  Média: 0.69
+  Desvio: 0.08
+
+Robustez/Balanceamento (Maximizar):
+  Mínimo: 0.63
+  Máximo: 0.82
+  Média: 0.70
+  Desvio: 0.06
+
+SOLUÇÕES CANDIDATAS:
+----------------------------------------
+  sol_1: f1=1990.7, f2=4, f3=0.6, f4=0.712
+  sol_2: f1=1990.7, f2=4, f3=0.7, f4=0.738
+  sol_3: f1=1990.7, f2=4, f3=0.7, f4=0.686
+  sol_4: f1=1990.7, f2=4, f3=0.8, f4=0.722
+  sol_5: f1=1990.7, f2=4, f3=0.7, f4=0.686
+  sol_ext_1: f1=1800.0, f2=6, f3=0.8, f4=0.818
+  sol_bal_1: f1=2414.9, f2=2, f3=0.5, f4=0.654
+  sol_bal_2: f1=2320.9, f2=2, f3=0.6, f4=0.631
+  sol_bal_8: f1=1898.0, f2=6, f3=0.8, f4=0.823
+  sol_int_1: f1=2176.5, f2=3, f3=0.7, f4=0.654
+  sol_int_3: f1=2116.8, f2=4, f3=0.7, f4=0.655
+  sol_int_6: f1=1954.3, f2=4, f3=0.8, f4=0.666
+
+============================================================
+2. MÉTODO AHP (ANALYTIC HIERARCHY PROCESS)
+============================================================
+ANÁLISE DE CONSISTÊNCIA:
+------------------------------
+Índice de Consistência: 0.0000
+Índice de Consistência Relativo: 0.0000
+Razão de Consistência: 0.0000
+Avaliação: Consistente
+
+VETOR DE PRIORIDADES (PESOS):
+------------------------------
+  f1: 0.2105
+  f2: 0.0896
+  f3: 0.4914
+  f4: 0.2086
+
+RANKING AHP:
+------------------------------
+Posição | Solução | Pontuação
+
+MELHOR SOLUÇÃO (AHP):
+------------------------------
+Solução: sol_ext_1
+Pontuação: 0.8858
+
+============================================================
+3. MÉTODO PROMETHEE II
+============================================================
+FLUXOS DE PREFERÊNCIA:
+------------------------------
+Solução | Fluxo Positivo | Fluxo Negativo | Fluxo Líquido
+  sol_1 | +0.138       | +0.138      | +0.000
+  sol_2 | +0.137       | +0.137      | +0.000
+  sol_3 | +0.142       | +0.142      | +0.000
+  sol_4 | +0.136       | +0.136      | +0.000
+  sol_5 | +0.142       | +0.142      | +0.000
+sol_ext_1 | +0.320       | +0.320      | +0.000
+sol_bal_1 | +0.290       | +0.290      | +0.000
+sol_bal_2 | +0.286       | +0.286      | +0.000
+sol_bal_8 | +0.247       | +0.247      | +0.000
+sol_int_1 | +0.254       | +0.254      | +0.000
+
+RANKING PROMETHEE II:
+------------------------------
+Posição | Solução | Fluxo Líquido
+ 1       | sol_1   | +0.0000
+ 2       | sol_2   | +0.0000
+ 3       | sol_3   | +0.0000
+ 4       | sol_4   | +0.0000
+ 5       | sol_5   | +0.0000
+ 6       | sol_ext_1   | +0.0000
+ 7       | sol_bal_1   | +0.0000
+ 8       | sol_bal_2   | +0.0000
+ 9       | sol_bal_8   | +0.0000
+10       | sol_int_1   | +0.0000
+11       | sol_int_3   | +0.0000
+12       | sol_int_6   | +0.0000
+
+MELHOR SOLUÇÃO (PROMETHEE):
+------------------------------
+Solução: sol_1
+Fluxo Líquido: +0.0000
+
+============================================================
+4. COMPARAÇÃO ENTRE MÉTODOS
+============================================================
+Método AHP escolheu: sol_ext_1
+Método PROMETHEE escolheu: sol_1
+
+⚠ DIVERGÊNCIA: Os métodos escolheram soluções diferentes.
+
+ANÁLISE DA DIVERGÊNCIA:
+- AHP: Método compensatório, permite trade-offs entre critérios
+- PROMETHEE: Método não-compensatório, baseia-se em sobreclassificação
+- AHP considera pesos relativos e consistência
+- PROMETHEE usa funções de preferência par-a-par
+
+COMPARAÇÃO DE RANKINGS (TOP 5):
+----------------------------------------
+Pos | AHP      | PROMETHEE | Concordância
+
+============================================================
+5. RECOMENDAÇÃO FINAL
+============================================================
+SOLUÇÃO RECOMENDADA: sol_ext_1
+Justificativa: Divergência resolvida por menor distância (f1)
+
+CARACTERÍSTICAS DA SOLUÇÃO ESCOLHIDA:
+----------------------------------------
+Distância Total: 1800.0 km
+Número de Equipes: 6
+Confiabilidade: 0.8%
+Robustez/Balanceamento: 0.818
+
+INTERPRETAÇÃO PRÁTICA:
+----------------------------------------
+Esta solução representa o melhor equilíbrio entre:
+  • Minimização da distância total percorrida pelas equipes
+  • Minimização do número de equipes (custos operacionais)
+  • Maximização da confiabilidade perante variações
+  • Maximização do balanceamento de carga entre equipes
+
+A solução escolhida oferece robustez e eficiência para aplicação prática.

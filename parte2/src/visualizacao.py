@@ -221,12 +221,12 @@ class Visualizador:
                                          node_color='white', node_shape='p', node_size=300, 
                                          alpha=0.9, edgecolors=cor, linewidths=3, 
                                          label='Bases Ocupadas' if base_idx == list(arestas_por_base.keys())[0] else "")
-
+        
         # Adiciona cruzes pretas nas bases ocupadas (marcação interna)
         for base in bases_ocupadas:
             x, y = pos[base]
             plt.plot(x, y, 'k+', markersize=15, markeredgewidth=3, alpha=0.9)
-
+        
         # Calcula o valor correto para exibição
         if resultado["funcao_objetivo"] == 'f1':
             valor_exibicao = self.funcoes_objetivo.calcular_f1(x_ij, h_ik, y_jk)
@@ -235,22 +235,21 @@ class Visualizador:
         
         if resultado["funcao_objetivo"] == 'f2':
             # Para F2, mostra diferença entre equipes
-            plt.title(f'Melhor Solução - F2: Minimização do Número de Equipes\n'
-                     f'Valor da Função: {valor_exibicao:.0f} equipe(s)\n'
+            plt.title(f'Melhor Solução - F2: Minimização da Diferença entre Equipes\n'
+                     f'Valor da Função: {valor_exibicao:.0f} (diferença entre equipes)\n'
                      f'Bases Ativas: {len(bases_ativas)}', fontsize=12, fontweight='bold')
         else:
             # Para F1, mostra distância total
             plt.title(f'Melhor Solução - F1: Minimização da Distância Total\n'
                      f'Valor da Função: {valor_exibicao:.2f} km\n'
                      f'Bases Ativas: {len(bases_ativas)}', fontsize=12, fontweight='bold')
-        # Cria legenda personalizada - copia exatamente como está no gráfico
+        # Cria legenda personalizada com a cruz dentro do pentágono
         legend_elements = [
             Line2D([0], [0], marker='o', color='w', markerfacecolor='blue', markersize=8, label='Ativos'),
-            Line2D([0], [0], marker='p', color='w', markerfacecolor='white', markeredgecolor='green', 
+            Line2D([0], [0], marker='p', color='w', markerfacecolor='white', markeredgecolor='green',
                    markersize=12, markeredgewidth=1, label='Bases Disponíveis'),
-            Line2D([0], [0], marker='p', color='w', markerfacecolor='white', markeredgecolor='red', 
-                   markersize=12, markeredgewidth=3, label='Bases Ocupadas'),
-            Line2D([0], [0], marker='+', color='k', markersize=12, label='Bases Ocupadas')
+            Line2D([0], [0], marker='+', color='w', markerfacecolor='white', markeredgecolor='red',
+                   markersize=12, markeredgewidth=3, label='Bases Ocupadas')
         ]
         
         plt.legend(handles=legend_elements, loc='upper right')
@@ -378,7 +377,7 @@ class Visualizador:
         ax12 = plt.subplot(3, 4, 12)
         ax12.axis('off')
         texto = f"""
-        RESUMO ESTATÍSTICO
+        RESUMO ESTATàSTICO
         
         F1 (Distância Total):
         • Mínimo: {resultados['f1']['min']:.2f} km
@@ -445,5 +444,170 @@ class Visualizador:
         plt.savefig(f'resultados/graficos/mapa_geografico_{resultado["funcao_objetivo"]}.png', 
                    dpi=300, bbox_inches='tight')
         plt.show()
+    
+    def plotar_fronteiras_pareto_sobrepostas(self, fronteiras: list, metodo: str, 
+                                            arquivo_saida: str = None):
+        """
+        Plota múltiplas fronteiras de Pareto sobrepostas (uma para cada execução).
+        
+        Args:
+            fronteiras: Lista de arrays (n_solucoes, 2) com [f1, f2] para cada execução
+            metodo: Nome do método ('Pw' ou 'Pe')
+            arquivo_saida: Caminho para salvar a figura
+        """
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        cores = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
+        
+        for i, fronteira in enumerate(fronteiras):
+            if len(fronteira) > 0:
+                # Ordena pela primeira coluna (f1) para melhor visualização
+                fronteira_ordenada = fronteira[np.argsort(fronteira[:, 0])]
+                ax.scatter(fronteira_ordenada[:, 0], fronteira_ordenada[:, 1], 
+                          s=80, alpha=0.7, color=cores[i % len(cores)], 
+                          label=f'Execução {i+1}', edgecolors='black', linewidth=0.5)
+                ax.plot(fronteira_ordenada[:, 0], fronteira_ordenada[:, 1], 
+                       alpha=0.3, linestyle='--', color=cores[i % len(cores)])
+        
+        ax.set_xlabel('f1: Distância Total (km)', fontsize=13, fontweight='bold')
+        ax.set_ylabel('f2: Número de Equipes', fontsize=13, fontweight='bold')
+        ax.set_title(f'Fronteiras de Pareto - Método {metodo}\n5 Execuções Sobrepostas', 
+                    fontsize=15, fontweight='bold', pad=20)
+        ax.legend(fontsize=11, loc='best')
+        ax.grid(True, alpha=0.3, linestyle=':')
+        
+        # Adiciona anotações
+        textstr = f'Método: {metodo}\nNúmero de Execuções: {len(fronteiras)}'
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.02, 0.98, textstr, transform=ax.transAxes, fontsize=10,
+               verticalalignment='top', bbox=props)
+        
+        plt.tight_layout()
+        
+        if arquivo_saida:
+            plt.savefig(arquivo_saida, dpi=300, bbox_inches='tight')
+            print(f"Figura salva em: {arquivo_saida}")
+        
+        return fig
+    
+    def plotar_fronteira_final_combinada(self, todas_solucoes: np.ndarray, metodo: str,
+                                        arquivo_saida: str = None):
+        """
+        Plota a fronteira de Pareto final combinando todas as execuções.
+        
+        Args:
+            todas_solucoes: Array (n_solucoes_total, 2) com [f1, f2] de todas execuções
+            metodo: Nome do método ('Pw' ou 'Pe')
+            arquivo_saida: Caminho para salvar a figura
+        """
+        from src.funcoes_objetivo import nondominatedsolutions, selecionar_solucoes_distribuidas
+        
+        # Encontra soluções não-dominadas
+        indices_nd = nondominatedsolutions(todas_solucoes)
+        solucoes_nd = todas_solucoes[indices_nd]
+        
+        # Seleciona até 20 soluções bem distribuídas
+        if len(indices_nd) > 20:
+            indices_selecionados = selecionar_solucoes_distribuidas(todas_solucoes, indices_nd, 20)
+            solucoes_finais = todas_solucoes[indices_selecionados]
+        else:
+            solucoes_finais = solucoes_nd
+        
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # Plota todas as soluções em cinza claro
+        ax.scatter(todas_solucoes[:, 0], todas_solucoes[:, 1], 
+                  s=30, alpha=0.2, color='gray', label='Todas as soluções')
+        
+        # Plota soluções não-dominadas em azul
+        if len(solucoes_nd) > 0:
+            ax.scatter(solucoes_nd[:, 0], solucoes_nd[:, 1], 
+                      s=60, alpha=0.6, color='blue', label='Não-dominadas', 
+                      edgecolors='black', linewidth=0.5)
+        
+        # Plota soluções finais (selecionadas) em vermelho
+        if len(solucoes_finais) > 0:
+            solucoes_ordenadas = solucoes_finais[np.argsort(solucoes_finais[:, 0])]
+            ax.scatter(solucoes_ordenadas[:, 0], solucoes_ordenadas[:, 1], 
+                      s=120, alpha=0.9, color='red', label='Fronteira Final (~20 pontos)', 
+                      edgecolors='black', linewidth=1.5, marker='D')
+            ax.plot(solucoes_ordenadas[:, 0], solucoes_ordenadas[:, 1], 
+                   alpha=0.5, linestyle='-', color='red', linewidth=2)
+        
+        ax.set_xlabel('f1: Distância Total (km)', fontsize=13, fontweight='bold')
+        ax.set_ylabel('f2: Número de Equipes', fontsize=13, fontweight='bold')
+        ax.set_title(f'Fronteira de Pareto Final - Método {metodo}\nCombinando 5 Execuções', 
+                    fontsize=15, fontweight='bold', pad=20)
+        ax.legend(fontsize=11, loc='best')
+        ax.grid(True, alpha=0.3, linestyle=':')
+        
+        # Estatísticas
+        textstr = f'Método: {metodo}\n'
+        textstr += f'Total de soluções: {len(todas_solucoes)}\n'
+        textstr += f'Não-dominadas: {len(solucoes_nd)}\n'
+        textstr += f'Fronteira final: {len(solucoes_finais)}'
+        props = dict(boxstyle='round', facecolor='lightblue', alpha=0.5)
+        ax.text(0.02, 0.98, textstr, transform=ax.transAxes, fontsize=10,
+               verticalalignment='top', bbox=props)
+        
+        plt.tight_layout()
+        
+        if arquivo_saida:
+            plt.savefig(arquivo_saida, dpi=300, bbox_inches='tight')
+            print(f"Figura salva em: {arquivo_saida}")
+        
+        return fig, solucoes_finais
+    
+    def plotar_comparacao_metodos(self, solucoes_pw: np.ndarray, solucoes_pe: np.ndarray,
+                                 arquivo_saida: str = None):
+        """
+        Plota comparação entre os métodos Pw e Pε.
+        
+        Args:
+            solucoes_pw: Fronteira final do método Pw
+            solucoes_pe: Fronteira final do método Pε
+            arquivo_saida: Caminho para salvar a figura
+        """
+        fig, ax = plt.subplots(figsize=(14, 9))
+        
+        # Pw em azul
+        if len(solucoes_pw) > 0:
+            pw_ordenado = solucoes_pw[np.argsort(solucoes_pw[:, 0])]
+            ax.scatter(pw_ordenado[:, 0], pw_ordenado[:, 1], 
+                      s=120, alpha=0.7, color='blue', label='Weighted Sum (Pw)', 
+                      edgecolors='black', linewidth=1, marker='o')
+            ax.plot(pw_ordenado[:, 0], pw_ordenado[:, 1], 
+                   alpha=0.4, linestyle='-', color='blue', linewidth=2)
+        
+        # Pε em verde
+        if len(solucoes_pe) > 0:
+            pe_ordenado = solucoes_pe[np.argsort(solucoes_pe[:, 0])]
+            ax.scatter(pe_ordenado[:, 0], pe_ordenado[:, 1], 
+                      s=120, alpha=0.7, color='green', label='ε-Constraint (Pε)', 
+                      edgecolors='black', linewidth=1, marker='s')
+            ax.plot(pe_ordenado[:, 0], pe_ordenado[:, 1], 
+                   alpha=0.4, linestyle='-', color='green', linewidth=2)
+        
+        ax.set_xlabel('f1: Distância Total (km)', fontsize=14, fontweight='bold')
+        ax.set_ylabel('f2: Número de Equipes', fontsize=14, fontweight='bold')
+        ax.set_title('Comparação: Weighted Sum (Pw) vs ε-Constraint (Pε)', 
+                    fontsize=16, fontweight='bold', pad=20)
+        ax.legend(fontsize=12, loc='best')
+        ax.grid(True, alpha=0.3, linestyle=':')
+        
+        # Estatísticas
+        textstr = f'Pw: {len(solucoes_pw)} soluções\n'
+        textstr += f'Pε: {len(solucoes_pe)} soluções'
+        props = dict(boxstyle='round', facecolor='lightyellow', alpha=0.5)
+        ax.text(0.02, 0.98, textstr, transform=ax.transAxes, fontsize=11,
+               verticalalignment='top', bbox=props)
+        
+        plt.tight_layout()
+        
+        if arquivo_saida:
+            plt.savefig(arquivo_saida, dpi=300, bbox_inches='tight')
+            print(f"Figura salva em: {arquivo_saida}")
+        
+        return fig
 
 
