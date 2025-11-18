@@ -18,6 +18,39 @@ Este trabalho implementa **dois métodos clássicos de decisão multicritério**
 - **f3**: Confiabilidade do monitoramento (maximizar) - atributo adicional
 - **f4**: Robustez/balanceamento da solução (maximizar) - atributo adicional
 
+### **Definição Detalhada dos Critérios**
+
+#### **f₁: Distância Total Percorrida (km)**
+- **Tipo**: Minimização
+- **Descrição**: Soma das distâncias percorridas por todas as equipes
+- **Cálculo**: Calculado pelo algoritmo VNS na Parte 2 (solução do problema de roteirização)
+- **Importância**: Critério principal relacionado a custos operacionais
+
+#### **f₂: Número de Equipes**
+- **Tipo**: Minimização
+- **Descrição**: Número total de equipes necessárias para cobrir todos os ativos
+- **Cálculo**: Determinado pelo algoritmo VNS (número de rotas/equipes)
+- **Importância**: Critério principal relacionado a custos de recursos humanos
+
+#### **f₃: Confiabilidade (%)**
+- **Tipo**: Maximização
+- **Descrição**: Probabilidade da solução se manter viável se a demanda aumentar 10%
+- **Cálculo**:
+  - **Base confiabilidade**: `0.7 + 0.2 × (f₂ - 1) / 7` (varia de 70% a 90%)
+  - **Fator eficiência**: `1 - (f₁ - 800) / (2500 - 800)` (baseado na proximidade do ótimo)
+  - **Confiança final**: `confiabilidade_base × (0.8 + 0.4 × eficiência)`
+  - **Valor final**: Limitado entre 50% e 95%, com ruído gaussiano (σ=0.05)
+- **Interpretação**: Soluções com mais equipes tendem a ser mais confiáveis devido à redundância, mas soluções eficientes (menor f₁) também contribuem para maior confiabilidade
+
+#### **f₄: Robustez/Balanceamento**
+- **Tipo**: Maximização
+- **Descrição**: Medida do equilíbrio na distribuição de ativos por equipe
+- **Cálculo**:
+  - **Base balanceamento**: `0.6 + 0.3 × (f₂ - 1) / 7` (varia de 60% a 90%)
+  - **Penalidade**: `0.05 × |f₂ - round(f₂)|` (penaliza números não-inteiros de equipes)
+  - **Valor final**: Limitado entre 40% e 95%, com ruído gaussiano (σ=0.03)
+- **Interpretação**: Soluções com mais equipes tendem a ter melhor distribuição de carga. Penaliza soluções com número "estranho" de equipes que poderiam indicar balanceamento ruim.
+
 ### O Desafio Real
 - **~20 soluções candidatas** da fronteira de Pareto (Parte 2)
 - **4 critérios conflitantes** para avaliação
@@ -68,6 +101,11 @@ Para cada par (a,b): π(a,b) = Σᵢ wᵢ × Pᵢ(a,b)
 - **φ⁺(a)**: Σᵦ π(a,b) / (n-1) - fluxo positivo (força)
 - **φ⁻(a)**: Σᵦ π(b,a) / (n-1) - fluxo negativo (fraqueza)
 - **φ(a)**: φ⁺(a) - φ⁻(a) - fluxo líquido (ranking final)
+
+#### Limitações Conhecidas
+- **Tendência a extremos**: PROMETHEE II tende a selecionar soluções extremas da fronteira de Pareto
+- **Limitação documentada**: Brans & Vincke (1985) discutem esta característica
+- **Complementação com AHP**: Uso conjunto permite melhor análise de decisão
 
 ## Algoritmos Implementados
 

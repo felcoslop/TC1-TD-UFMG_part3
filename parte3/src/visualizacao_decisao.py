@@ -142,6 +142,8 @@ class VisualizacaoDecisao:
 
         # Legenda completa com tipos de soluções - canto superior esquerdo
         legend_elements = [
+            plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='red',
+                      markersize=10, label='Extrema'),
             plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='blue',
                       markersize=10, label='Balanceada'),
             plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='green',
@@ -159,8 +161,8 @@ class VisualizacaoDecisao:
         plt.tight_layout()
 
         if salvar:
-            os.makedirs('resultados/graficos', exist_ok=True)
-            caminho = 'resultados/graficos/fronteira_pareto_decisao.png'
+            os.makedirs('parte3/resultados/graficos', exist_ok=True)
+            caminho = 'parte3/resultados/graficos/fronteira_pareto_decisao.png'
             fig.savefig(caminho, dpi=self.dpi, bbox_inches='tight')
             print(f"Gráfico salvo em: {caminho}")
 
@@ -269,8 +271,8 @@ class VisualizacaoDecisao:
         plt.tight_layout()
 
         if salvar:
-            os.makedirs('resultados/graficos', exist_ok=True)
-            caminho = 'resultados/graficos/perfil_solucoes_radar.png'
+            os.makedirs('parte3/resultados/graficos', exist_ok=True)
+            caminho = 'parte3/resultados/graficos/perfil_solucoes_radar.png'
             fig.savefig(caminho, dpi=self.dpi, bbox_inches='tight')
             print(f"Gráfico salvo em: {caminho}")
 
@@ -375,4 +377,4 @@ class VisualizacaoDecisao:
             self.plotar_radar_solucao(dados_decisao, escolha_ahp, escolha_promethee)
 
         print("Todas as visualizações foram geradas!")
-        print("Verifique a pasta: resultados/graficos/")
+        print("Verifique a pasta: parte3/resultados/graficos/")

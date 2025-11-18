@@ -73,7 +73,7 @@ def main():
         print("Atributos adicionais gerados (f3, f4)")
 
         # Salvar dados em CSV
-        dados_decisao.salvar_dados("resultados/dados_decisao.csv")
+        dados_decisao.salvar_dados("parte3/resultados/dados_decisao.csv")
         print()
 
         # 2. Executar método AHP
@@ -131,9 +131,12 @@ def main():
         relatorios = RelatoriosDecisao()
 
         # Relatório completo
-        relatorios.gerar_relatorio_completo(
-            df_decisao, resultados_ahp, resultados_promethee
+        print("Gerando relatório completo...")
+        relatorio = relatorios.gerar_relatorio_completo(
+            df_decisao, resultados_ahp, resultados_promethee,
+            caminho="parte3/resultados/relatorios/relatorio_decisao.txt"
         )
+        print(f"Relatório gerado com {len(relatorio.split(chr(10)))} linhas")
         print()
 
         # 6. Resumo final
@@ -170,10 +173,10 @@ def main():
 
         print()
         print("ARQUIVOS GERADOS:")
-        print("- resultados/dados_decisao.csv (dados das solucoes)")
-        print("- resultados/graficos/fronteira_pareto_decisao.png")
-        print("- resultados/graficos/perfil_solucoes_radar.png")
-        print("- resultados/relatorios/relatorio_decisao.txt")
+        print("- parte3/resultados/dados_decisao.csv (dados das solucoes)")
+        print("- parte3/resultados/graficos/fronteira_pareto_decisao.png")
+        print("- parte3/resultados/graficos/perfil_solucoes_radar.png")
+        print("- parte3/resultados/relatorios/relatorio_decisao.txt")
         print()
 
         print(f"Término: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")

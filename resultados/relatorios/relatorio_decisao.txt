@@ -2,7 +2,7 @@
 RELATÓRIO DE TOMADA DE DECISÃO MULTICRITÉRIO
 Trabalho Computacional 1 - Teoria da Decisão
 ================================================================================
-Data de geração: 18/11/2025 15:31:09
+Data de geração: 18/11/2025 15:22:57
 
 ============================================================
 1. RESUMO DOS DADOS DE DECISÃO

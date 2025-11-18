@@ -32,7 +32,7 @@ class MetodoPROMETHEE:
     def definir_funcao_preferencia(self, criterio: str, tipo: str = 'linear',
                                  q: float = 0.0, p: float = 1.0) -> Callable:
         """
-        Define função de preferência para um critério.
+        Define função de preferência para um critério baseada na diferença x = val_a - val_b.
 
         Args:
             criterio: Nome do critério
@@ -41,41 +41,41 @@ class MetodoPROMETHEE:
             p: Parâmetro de preferência estrita
 
         Returns:
-            Função de preferência P(a,b)
+            Função de preferência P(diff) onde diff = val_a - val_b
         """
         if tipo == 'usual':
-            # Função usual: P(a,b) = 0 se |a-b| <= q, 1 se |a-b| > q
-            def f(a, b):
-                return 0.0 if abs(a - b) <= q else 1.0
+            # Função usual: P(x) = 0 se |x| <= q, 1 se |x| > q
+            def f(diff):
+                return 0.0 if abs(diff) <= q else 1.0
 
         elif tipo == 'linear':
-            # Função linear: P(a,b) = 0 se |a-b| <= q, (|a-b|-q)/(p-q) se q < |a-b| <= p, 1 se |a-b| > p
-            def f(a, b):
-                diff = abs(a - b)
-                if diff <= q:
+            # Função linear: P(x) = 0 se |x| <= q, (|x|-q)/(p-q) se q < |x| <= p, 1 se |x| > p
+            def f(diff):
+                x = abs(diff)
+                if x <= q:
                     return 0.0
-                elif diff <= p:
-                    return (diff - q) / (p - q)
+                elif x <= p:
+                    return (x - q) / (p - q)
                 else:
                     return 1.0
 
         elif tipo == 'level':
-            # Função level: P(a,b) = 0.5 se q < |a-b| <= p, 1 se |a-b| > p
-            def f(a, b):
-                diff = abs(a - b)
-                if diff <= q:
+            # Função level: P(x) = 0.5 se q < |x| <= p, 1 se |x| > p
+            def f(diff):
+                x = abs(diff)
+                if x <= q:
                     return 0.0
-                elif diff <= p:
+                elif x <= p:
                     return 0.5
                 else:
                     return 1.0
 
         elif tipo == 'vshape':
-            # Função V-shape: P(a,b) = |a-b| / p se |a-b| <= p, 1 se |a-b| > p
-            def f(a, b):
-                diff = abs(a - b)
-                if diff <= p:
-                    return diff / p
+            # Função V-shape: P(x) = |x| / p se |x| <= p, 1 se |x| > p
+            def f(diff):
+                x = abs(diff)
+                if x <= p:
+                    return x / p
                 else:
                     return 1.0
 
@@ -135,24 +135,27 @@ class MetodoPROMETHEE:
             raise ValueError("Dimensões incompatíveis")
 
         pi = 0.0
-        peso_total = np.sum(pesos)
 
         for i, criterio in enumerate(criterios):
-            # Para critérios de minimização, inverte a comparação
-            if criterio in ['f1', 'f2']:
-                # Para minimização: a é preferível se a < b
-                val_a, val_b = alt_a[i], alt_b[i]
-            else:
-                # Para maximização: a é preferível se a > b
-                val_a, val_b = alt_a[i], alt_b[i]
+            val_a, val_b = alt_a[i], alt_b[i]
 
-            # Calcula preferência P(a,b)
-            P_ab = self.funcao_preferencia[criterio](val_a, val_b)
+            # Calcula a diferença: para maximização, val_a > val_b indica preferência por a
+            # Para minimização, val_a < val_b indica preferência por a (valores menores são melhores)
+            if criterio in ['f1', 'f2']:
+                # Para minimização: se val_a < val_b, então a é preferível (x = val_b - val_a > 0)
+                diff = val_b - val_a  # Para minimização, invertemos a diferença
+            else:
+                # Para maximização: se val_a > val_b, então a é preferível (x = val_a - val_b > 0)
+                diff = val_a - val_b
+
+            # Calcula preferência usando a diferença
+            P_ab = self.funcao_preferencia[criterio](diff)
 
             # Adiciona contribuição ponderada
             pi += pesos[i] * P_ab
 
-        # Normaliza pelo peso total
+        # Normaliza pelo peso total (conforme teoria PROMETHEE)
+        peso_total = np.sum(pesos)
         pi /= peso_total
 
         return pi
@@ -195,6 +198,7 @@ class MetodoPROMETHEE:
                     pi_ji = self.calcular_indice_preferencia_global(
                         matriz_decisao[j], matriz_decisao[i], criterios, pesos
                     )
+
 
                     # Fluxo positivo: soma de π(i,j) sobre todos j ≠ i
                     fluxo_positivo += pi_ij

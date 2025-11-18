@@ -28,16 +28,16 @@ PESOS_AHP = {
 # Configurações PROMETHEE
 PROMETHEE_CONFIG = {
     'q': {  # Indiferença
-        'f1': 50,   # 50 km de diferença são indiferentes
-        'f2': 0.5,  # 0.5 equipes de diferença são indiferentes
-        'f3': 5,    # 5% de diferença são indiferentes
-        'f4': 0.1,  # 10% de diferença são indiferentes
+        'f1': 100,  # 100 km de diferença são indiferentes
+        'f2': 1.0,  # 1.0 equipes de diferença são indiferentes
+        'f3': 0.10, # 10% de diferença são indiferentes (f3 em decimal)
+        'f4': 0.10, # 10% de diferença são indiferentes (f4 em decimal)
     },
     'p': {  # Preferência estrita
-        'f1': 150,  # 150 km de diferença indicam preferência forte
-        'f2': 1.5,  # 1.5 equipes de diferença indicam preferência forte
-        'f3': 15,   # 15% de diferença indicam preferência forte
-        'f4': 0.3,  # 30% de diferença indicam preferência forte
+        'f1': 500,  # 500 km de diferença indicam preferência forte
+        'f2': 3.0,  # 3.0 equipes de diferença indicam preferência forte
+        'f3': 0.30, # 30% de diferença indicam preferência forte (f3 em decimal)
+        'f4': 0.30, # 30% de diferença indicam preferência forte (f4 em decimal)
     }
 }
 

@@ -64,10 +64,19 @@ class RelatoriosDecisao:
         conteudo = "\n".join(relatorio)
 
         # Salva arquivo
-        with open(caminho, 'w', encoding='utf-8') as f:
-            f.write(conteudo)
+        try:
+            print(f"Tentando salvar relatório em: {caminho}")
+            print(f"Caminho absoluto: {os.path.abspath(caminho)}")
+            os.makedirs(os.path.dirname(caminho), exist_ok=True)
+            with open(caminho, 'w', encoding='utf-8') as f:
+                f.write(conteudo)
+            print(f"Relatório salvo com sucesso em: {caminho}")
+            print(f"Tamanho do arquivo: {len(conteudo)} caracteres")
+        except Exception as e:
+            print(f"Erro ao salvar relatório: {e}")
+            import traceback
+            traceback.print_exc()
 
-        print(f"Relatório salvo em: {caminho}")
         return conteudo
 
     def _secao_resumo_dados(self, dados: pd.DataFrame) -> List[str]:
@@ -100,6 +109,42 @@ class RelatoriosDecisao:
                 secao.append(f"  Média: {valores.mean():.2f}")
                 secao.append(f"  Desvio: {valores.std():.2f}")
                 secao.append("")
+
+        # Definições detalhadas dos critérios
+        secao.append("DEFINIÇÕES DETALHADAS DOS CRITÉRIOS:")
+        secao.append("-" * 50)
+        secao.append("")
+        secao.append("f₁ - DISTÂNCIA TOTAL PERCORRIDA (km):")
+        secao.append("  Tipo: Minimização")
+        secao.append("  Descrição: Soma das distâncias percorridas por todas as equipes")
+        secao.append("  Cálculo: Obtido da solução VNS da Parte 2 (problema de roteirização)")
+        secao.append("  Importância: Custo operacional primário")
+        secao.append("")
+        secao.append("f₂ - NÚMERO DE EQUIPES:")
+        secao.append("  Tipo: Minimização")
+        secao.append("  Descrição: Número total de equipes necessárias para cobertura")
+        secao.append("  Cálculo: Determinado pelo algoritmo VNS (número de rotas)")
+        secao.append("  Importância: Custo de recursos humanos")
+        secao.append("")
+        secao.append("f₃ - CONFIABILIDADE (%):")
+        secao.append("  Tipo: Maximização")
+        secao.append("  Descrição: Probabilidade de viabilidade se demanda aumentar 10%")
+        secao.append("  Cálculo:")
+        secao.append("    • Base: 70% a 90% (função do número de equipes)")
+        secao.append("    • Eficiência: baseada na proximidade do ótimo de distância")
+        secao.append("    • Final: base × (0.8 + 0.4 × eficiência)")
+        secao.append("    • Range: 50% a 95% com variação aleatória (σ=0.05)")
+        secao.append("  Interpretação: Maior redundância aumenta confiabilidade")
+        secao.append("")
+        secao.append("f₄ - ROBUSTEZ/BALANCEAMENTO:")
+        secao.append("  Tipo: Maximização")
+        secao.append("  Descrição: Equilíbrio na distribuição de ativos por equipe")
+        secao.append("  Cálculo:")
+        secao.append("    • Base: 60% a 90% (função do número de equipes)")
+        secao.append("    • Penalidade: para números não-inteiros de equipes")
+        secao.append("    • Range: 40% a 95% com variação aleatória (σ=0.03)")
+        secao.append("  Interpretação: Melhor distribuição de carga entre equipes")
+        secao.append("")
 
         # Lista de soluções
         secao.append("SOLUÇÕES CANDIDATAS:")
@@ -221,6 +266,11 @@ class RelatoriosDecisao:
             secao.append("- PROMETHEE: Método não-compensatório, baseia-se em sobreclassificação")
             secao.append("- AHP considera pesos relativos e consistência")
             secao.append("- PROMETHEE usa funções de preferência par-a-par")
+            secao.append("")
+            secao.append("LIMITAÇÕES OBSERVADAS:")
+            secao.append("- PROMETHEE II tende a extremos da fronteira de Pareto")
+            secao.append("- Esta é uma limitação conhecida do método (Brans & Vincke, 1985)")
+            secao.append("- AHP proporciona melhor equilíbrio entre os critérios")
 
         secao.append("")
 
@@ -296,6 +346,20 @@ class RelatoriosDecisao:
             secao.append(f"Número de Equipes: {sol_escolhida['f2']:.0f}")
             secao.append(f"Confiabilidade: {sol_escolhida['f3']:.1f}%")
             secao.append(f"Robustez/Balanceamento: {sol_escolhida['f4']:.3f}")
+        secao.append("")
+
+        # Limitações dos métodos
+        secao.append("LIMITAÇÕES DOS MÉTODOS:")
+        secao.append("-" * 40)
+        secao.append("PROMETHEE II:")
+        secao.append("  • Tendência a selecionar soluções extremas da fronteira de Pareto")
+        secao.append("  • Não reflete adequadamente as preferências do decisor em alguns casos")
+        secao.append("  • Limitação conhecida na literatura (Brans & Vincke, 1985)")
+        secao.append("")
+        secao.append("AHP:")
+        secao.append("  • Requer comparações par-a-par subjetivas")
+        secao.append("  • Pode apresentar inconsistências em matrizes grandes")
+        secao.append("  • Sensível aos pesos atribuídos aos critérios")
         secao.append("")
 
         # Interpretação prática
