@@ -248,17 +248,19 @@ class DadosDecisao:
             t = i / (self.n_solucoes - 1)  # 0 a 1
 
             # Função convexa: f2 alto → f1 baixo, f2 baixo → f1 alto
-            f2 = 1 + 7 * t  # 1 a 8 equipes
-            f1 = 2500 - 1700 * (f2 - 1) / 7  # 2500 km quando f2=1, ~800 km quando f2=8
+            f2_float = 1 + 7 * t  # 1 a 8 equipes (float para cálculo)
+            f1 = 2500 - 1700 * (f2_float - 1) / 7  # 2500 km quando f2=1, ~800 km quando f2=8
 
             # Adiciona variação realista
             f1 += np.random.normal(0, 50)
-            f2 = max(1, min(8, f2 + np.random.normal(0, 0.2)))
+            
+            # Garante número inteiro de equipes
+            f2 = int(round(max(1, min(8, f2_float + np.random.normal(0, 0.2)))))
 
             solucoes.append({
                 'id': f'sint_{i+1:02d}',
                 'f1': round(f1, 2),
-                'f2': round(f2, 1),
+                'f2': int(f2),
                 'fonte': 'sintetico'
             })
 
@@ -267,34 +269,27 @@ class DadosDecisao:
     def _gerar_atributos_adicionais(self) -> None:
         """
         Gera atributos adicionais conflitantes para tomada de decisão.
+        
+        Conforme solicitado, estes atributos são independentes da função objetivo (f1 e f2),
+        representando critérios exógenos ao modelo matemático.
 
-        f3 (Confiabilidade): Probabilidade da solução se manter viável se demanda aumentar 10%
-        f4 (Robustez/Balanceamento): Inverso da variância do número de ativos por equipe
+        f3 (Facilidade de Implementação): Avaliação subjetiva (0-1)
+        f4 (Impacto Social): Avaliação do benefício social (0-1)
         """
-        print("Gerando atributos adicionais para tomada de decisao...")
+        print("Gerando atributos adicionais independentes para tomada de decisao...")
 
         for sol in self.soluções:
-            f2 = sol['f2']
+            # f3: Facilidade de Implementação (maximizar)
+            # Gerado aleatoriamente para simular um critério independente
+            # Valores entre 0.4 e 0.95
+            sol['f3'] = round(np.random.uniform(0.4, 0.95), 3)
 
-            # f3: Confiabilidade (maximizar)
-            # Soluções com mais equipes tendem a ser mais confiáveis (mais redundância)
-            # Mas há trade-off: soluções muito robustas podem ser custosas
-            confiabilidade_base = 0.7 + 0.2 * (f2 - 1) / 7  # 70% a 90%
-            # Adiciona variabilidade baseada na eficiência da solução
-            eficiencia = 1 - (sol['f1'] - 800) / (2500 - 800)  # 0 a 1 (mais eficiente = 1)
-            confiabilidade = confiabilidade_base * (0.8 + 0.4 * eficiencia)
-            sol['f3'] = round(min(0.95, max(0.5, confiabilidade + np.random.normal(0, 0.05))), 3)
+            # f4: Impacto Social (maximizar)
+            # Gerado aleatoriamente para simular um critério independente
+            # Valores entre 0.5 e 0.98
+            sol['f4'] = round(np.random.uniform(0.5, 0.98), 3)
 
-            # f4: Robustez/Balanceamento (maximizar)
-            # Mede o equilíbrio na distribuição de ativos por equipe
-            # Soluções bem balanceadas têm variância menor na distribuição de carga
-            # Assumimos que soluções com mais equipes tendem a ser melhor balanceadas
-            balanceamento_base = 0.6 + 0.3 * (f2 - 1) / 7  # 60% a 90%
-            # Penaliza soluções com número "estranho" de equipes
-            penalidade = 0.05 * abs(f2 - round(f2))  # Penaliza números não-inteiros
-            sol['f4'] = round(min(0.95, max(0.4, balanceamento_base - penalidade + np.random.normal(0, 0.03))), 3)
-
-        print(f"Atributos gerados para {len(self.soluções)} solucoes")
+        print(f"Atributos independentes gerados para {len(self.soluções)} solucoes")
 
     def obter_matriz_decisao(self) -> Tuple[np.ndarray, List[str], List[str]]:
         """
@@ -489,14 +484,16 @@ class DadosDecisao:
         solucoes_balanceadas = []
         for i in range(8):
             # Cria trade-off não-linear típico de problemas reais
-            f2 = 2 + i * 0.5  # 2, 2.5, 3, 3.5, ..., 6 equipes
+            f2_base = 2 + i * 0.5  # Base para cálculo
+            f2 = int(round(f2_base))  # Inteiro: 2, 3, 4...
+            
             # Distância aumenta com menos equipes (relação realista)
-            f1 = 1800 + (6 - f2) * 150  # Distância cresce com menos equipes
+            f1 = 1800 + (8 - f2_base) * 150  # Distância cresce com menos equipes
 
             sol = {
                 'id': f'sol_bal_{i+1}',
                 'f1': round(f1 + np.random.normal(0, 30), 1),  # Variação natural
-                'f2': round(f2, 1),
+                'f2': int(f2),
                 'fonte': 'sintetica_balanceada'
             }
             solucoes_balanceadas.append(sol)
@@ -504,13 +501,15 @@ class DadosDecisao:
         # Soluções intermediárias adicionais para mais diversidade
         solucoes_intermediarias = []
         for i in range(6):
-            f2 = 3 + i * 0.3  # Entre 3 e 5 equipes
-            f1 = 2000 + (5 - f2) * 100 + np.random.normal(0, 50)
+            f2_base = 3 + i * 0.3  # Entre 3 e 5 equipes
+            f2 = int(round(f2_base))
+            
+            f1 = 2000 + (5 - f2_base) * 100 + np.random.normal(0, 50)
 
             sol = {
                 'id': f'sol_int_{i+1}',
                 'f1': round(max(1800, min(2800, f1)), 1),
-                'f2': round(f2, 1),
+                'f2': int(f2),
                 'fonte': 'sintetica_intermediaria'
             }
             solucoes_intermediarias.append(sol)

@@ -96,8 +96,8 @@ class RelatoriosDecisao:
         criterios_info = {
             'f1': ('Distância Total (km)', 'Minimizar'),
             'f2': ('Número de Equipes', 'Minimizar'),
-            'f3': ('Confiabilidade (%)', 'Maximizar'),
-            'f4': ('Robustez/Balanceamento', 'Maximizar')
+            'f3': ('Facilidade de Implementação', 'Maximizar'),
+            'f4': ('Impacto Social', 'Maximizar')
         }
 
         for crit, (nome, sentido) in criterios_info.items():
@@ -126,31 +126,26 @@ class RelatoriosDecisao:
         secao.append("  Cálculo: Determinado pelo algoritmo VNS (número de rotas)")
         secao.append("  Importância: Custo de recursos humanos")
         secao.append("")
-        secao.append("f₃ - CONFIABILIDADE (%):")
+        secao.append("f₃ - FACILIDADE DE IMPLEMENTAÇÃO:")
         secao.append("  Tipo: Maximização")
-        secao.append("  Descrição: Probabilidade de viabilidade se demanda aumentar 10%")
-        secao.append("  Cálculo:")
-        secao.append("    • Base: 70% a 90% (função do número de equipes)")
-        secao.append("    • Eficiência: baseada na proximidade do ótimo de distância")
-        secao.append("    • Final: base × (0.8 + 0.4 × eficiência)")
-        secao.append("    • Range: 50% a 95% com variação aleatória (σ=0.05)")
-        secao.append("  Interpretação: Maior redundância aumenta confiabilidade")
+        secao.append("  Descrição: Avaliação qualitativa da facilidade técnica e operacional")
+        secao.append("  Cálculo: Valor atribuído independentemente (exógeno)")
+        secao.append("  Range: 0 a 1 (normalizado)")
+        secao.append("  Interpretação: Maior facilidade reduz riscos de projeto")
         secao.append("")
-        secao.append("f₄ - ROBUSTEZ/BALANCEAMENTO:")
+        secao.append("f₄ - IMPACTO SOCIAL:")
         secao.append("  Tipo: Maximização")
-        secao.append("  Descrição: Equilíbrio na distribuição de ativos por equipe")
-        secao.append("  Cálculo:")
-        secao.append("    • Base: 60% a 90% (função do número de equipes)")
-        secao.append("    • Penalidade: para números não-inteiros de equipes")
-        secao.append("    • Range: 40% a 95% com variação aleatória (σ=0.03)")
-        secao.append("  Interpretação: Melhor distribuição de carga entre equipes")
+        secao.append("  Descrição: Benefício percebido pela comunidade atendida")
+        secao.append("  Cálculo: Valor atribuído independentemente (exógeno)")
+        secao.append("  Range: 0 a 1 (normalizado)")
+        secao.append("  Interpretação: Maior aceitação e retorno social")
         secao.append("")
 
         # Lista de soluções
         secao.append("SOLUÇÕES CANDIDATAS:")
         secao.append("-" * 40)
         for _, row in dados.iterrows():
-            secao.append(f"  {row['id']}: f1={row['f1']:.1f}, f2={row['f2']:.0f}, f3={row['f3']:.1f}, f4={row['f4']:.3f}")
+            secao.append(f"  {row['id']}: f1={row['f1']:.1f}, f2={row['f2']:.0f}, f3={row['f3']:.3f}, f4={row['f4']:.3f}")
         secao.append("")
 
         return secao
@@ -344,8 +339,8 @@ class RelatoriosDecisao:
             secao.append("-" * 40)
             secao.append(f"Distância Total: {sol_escolhida['f1']:.1f} km")
             secao.append(f"Número de Equipes: {sol_escolhida['f2']:.0f}")
-            secao.append(f"Confiabilidade: {sol_escolhida['f3']:.1f}%")
-            secao.append(f"Robustez/Balanceamento: {sol_escolhida['f4']:.3f}")
+            secao.append(f"Facilidade de Implementação: {sol_escolhida['f3']:.3f}")
+            secao.append(f"Impacto Social: {sol_escolhida['f4']:.3f}")
         secao.append("")
 
         # Limitações dos métodos
@@ -368,8 +363,8 @@ class RelatoriosDecisao:
         secao.append("Esta solução representa o melhor equilíbrio entre:")
         secao.append("  • Minimização da distância total percorrida pelas equipes")
         secao.append("  • Minimização do número de equipes (custos operacionais)")
-        secao.append("  • Maximização da confiabilidade perante variações")
-        secao.append("  • Maximização do balanceamento de carga entre equipes")
+        secao.append("  • Maximização da facilidade de implementação")
+        secao.append("  • Maximização do impacto social positivo")
         secao.append("")
         secao.append("A solução escolhida oferece robustez e eficiência para aplicação prática.")
 

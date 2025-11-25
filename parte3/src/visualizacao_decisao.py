@@ -161,8 +161,8 @@ class VisualizacaoDecisao:
         plt.tight_layout()
 
         if salvar:
-            os.makedirs('parte3/resultados/graficos', exist_ok=True)
-            caminho = 'parte3/resultados/graficos/fronteira_pareto_decisao.png'
+            os.makedirs('resultados/graficos', exist_ok=True)
+            caminho = 'resultados/graficos/fronteira_pareto_decisao.png'
             fig.savefig(caminho, dpi=self.dpi, bbox_inches='tight')
             print(f"Gráfico salvo em: {caminho}")
 
@@ -206,7 +206,7 @@ class VisualizacaoDecisao:
 
         # Categorias do radar (critérios) - com escalas reais
         categorias = ['f1\n(Distância km)', 'f2\n(Equipes x100)',
-                     'f3\n(Confiabilidade x1000)', 'f4\n(Robustez x1000)']
+                     'f3\n(Facilidade Impl. x1000)', 'f4\n(Impacto Social x1000)']
         n_categorias = len(categorias)
 
         # Ângulos para cada categoria
@@ -271,8 +271,8 @@ class VisualizacaoDecisao:
         plt.tight_layout()
 
         if salvar:
-            os.makedirs('parte3/resultados/graficos', exist_ok=True)
-            caminho = 'parte3/resultados/graficos/perfil_solucoes_radar.png'
+            os.makedirs('resultados/graficos', exist_ok=True)
+            caminho = 'resultados/graficos/perfil_solucoes_radar.png'
             fig.savefig(caminho, dpi=self.dpi, bbox_inches='tight')
             print(f"Gráfico salvo em: {caminho}")
 

@@ -2,38 +2,38 @@
 RELATÓRIO DE TOMADA DE DECISÃO MULTICRITÉRIO
 Trabalho Computacional 1 - Teoria da Decisão
 ================================================================================
-Data de geração: 18/11/2025 15:31:09
+Data de geração: 25/11/2025 14:01:37
 
 ============================================================
 1. RESUMO DOS DADOS DE DECISÃO
 ============================================================
-Número de soluções candidatas: 15
+Número de soluções candidatas: 8
 
 ESTATÍSTICAS DOS CRITÉRIOS:
 ----------------------------------------
 Distância Total (km) (Minimizar):
   Mínimo: 1800.00
-  Máximo: 2800.00
-  Média: 2157.94
-  Desvio: 241.40
+  Máximo: 2555.29
+  Média: 2302.85
+  Desvio: 290.89
 
 Número de Equipes (Minimizar):
-  Mínimo: 2.00
+  Mínimo: 1.00
   Máximo: 6.00
-  Média: 3.77
-  Desvio: 1.20
+  Média: 2.62
+  Desvio: 1.69
 
-Confiabilidade (%) (Maximizar):
-  Mínimo: 0.50
-  Máximo: 0.78
-  Média: 0.67
-  Desvio: 0.07
+Facilidade de Implementação (Maximizar):
+  Mínimo: 0.44
+  Máximo: 0.74
+  Média: 0.62
+  Desvio: 0.11
 
-Robustez/Balanceamento (Maximizar):
-  Mínimo: 0.60
-  Máximo: 0.83
+Impacto Social (Maximizar):
+  Mínimo: 0.52
+  Máximo: 0.95
   Média: 0.70
-  Desvio: 0.06
+  Desvio: 0.15
 
 DEFINIÇÕES DETALHADAS DOS CRITÉRIOS:
 --------------------------------------------------
@@ -50,42 +50,30 @@ f₂ - NÚMERO DE EQUIPES:
   Cálculo: Determinado pelo algoritmo VNS (número de rotas)
   Importância: Custo de recursos humanos
 
-f₃ - CONFIABILIDADE (%):
+f₃ - FACILIDADE DE IMPLEMENTAÇÃO:
   Tipo: Maximização
-  Descrição: Probabilidade de viabilidade se demanda aumentar 10%
-  Cálculo:
-    • Base: 70% a 90% (função do número de equipes)
-    • Eficiência: baseada na proximidade do ótimo de distância
-    • Final: base × (0.8 + 0.4 × eficiência)
-    • Range: 50% a 95% com variação aleatória (σ=0.05)
-  Interpretação: Maior redundância aumenta confiabilidade
+  Descrição: Avaliação qualitativa da facilidade técnica e operacional
+  Cálculo: Valor atribuído independentemente (exógeno)
+  Range: 0 a 1 (normalizado)
+  Interpretação: Maior facilidade reduz riscos de projeto
 
-f₄ - ROBUSTEZ/BALANCEAMENTO:
+f₄ - IMPACTO SOCIAL:
   Tipo: Maximização
-  Descrição: Equilíbrio na distribuição de ativos por equipe
-  Cálculo:
-    • Base: 60% a 90% (função do número de equipes)
-    • Penalidade: para números não-inteiros de equipes
-    • Range: 40% a 95% com variação aleatória (σ=0.03)
-  Interpretação: Melhor distribuição de carga entre equipes
+  Descrição: Benefício percebido pela comunidade atendida
+  Cálculo: Valor atribuído independentemente (exógeno)
+  Range: 0 a 1 (normalizado)
+  Interpretação: Maior aceitação e retorno social
 
 SOLUÇÕES CANDIDATAS:
 ----------------------------------------
-  sol_ext_1: f1=1800.0, f2=6, f3=0.7, f4=0.797
-  sol_ext_2: f1=2800.0, f2=2, f3=0.5, f4=0.652
-  sol_bal_1: f1=2414.9, f2=2, f3=0.6, f4=0.600
-  sol_bal_2: f1=2320.9, f2=2, f3=0.7, f4=0.633
-  sol_bal_3: f1=2269.4, f2=3, f3=0.7, f4=0.643
-  sol_bal_4: f1=2220.7, f2=4, f3=0.6, f4=0.685
-  sol_bal_5: f1=2093.0, f2=4, f3=0.6, f4=0.740
-  sol_bal_6: f1=2018.0, f2=4, f3=0.7, f4=0.716
-  sol_bal_7: f1=1997.4, f2=5, f3=0.7, f4=0.827
-  sol_bal_8: f1=1898.0, f2=6, f3=0.8, f4=0.736
-  sol_int_1: f1=2176.5, f2=3, f3=0.7, f4=0.649
-  sol_int_2: f1=2197.1, f2=3, f3=0.7, f4=0.625
-  sol_int_3: f1=2116.8, f2=4, f3=0.6, f4=0.697
-  sol_int_5: f1=2092.1, f2=4, f3=0.7, f4=0.732
-  sol_int_6: f1=1954.3, f2=4, f3=0.7, f4=0.716
+  sol_10: f1=2460.5, f2=2, f3=0.638, f4=0.640
+  sol_11: f1=2460.5, f2=2, f3=0.737, f4=0.567
+  sol_12: f1=2460.5, f2=2, f3=0.561, f4=0.676
+  sol_13: f1=2555.3, f2=1, f3=0.651, f4=0.877
+  sol_14: f1=2555.3, f2=1, f3=0.510, f4=0.747
+  sol_ext_1: f1=1800.0, f2=6, f3=0.726, f4=0.522
+  sol_int_1: f1=2176.5, f2=3, f3=0.734, f4=0.582
+  sol_int_6: f1=1954.3, f2=4, f3=0.436, f4=0.955
 
 ============================================================
 2. MÉTODO AHP (ANALYTIC HIERARCHY PROCESS)
@@ -110,8 +98,8 @@ Posição | Solução | Pontuação
 
 MELHOR SOLUÇÃO (AHP):
 ------------------------------
-Solução: sol_bal_8
-Pontuação: 0.8174
+Solução: sol_ext_1
+Pontuação: 0.6839
 
 ============================================================
 3. MÉTODO PROMETHEE II
@@ -119,46 +107,37 @@ Pontuação: 0.8174
 FLUXOS DE PREFERÊNCIA:
 ------------------------------
 Solução | Fluxo Positivo | Fluxo Negativo | Fluxo Líquido
-sol_ext_1 | +0.246       | +0.246      | +0.000
-sol_ext_2 | +0.474       | +0.474      | +0.000
-sol_bal_1 | +0.293       | +0.293      | +0.000
-sol_bal_2 | +0.150       | +0.150      | +0.000
-sol_bal_3 | +0.111       | +0.111      | +0.000
-sol_bal_4 | +0.088       | +0.088      | +0.000
-sol_bal_5 | +0.076       | +0.076      | +0.000
-sol_bal_6 | +0.100       | +0.100      | +0.000
-sol_bal_7 | +0.168       | +0.168      | +0.000
-sol_bal_8 | +0.215       | +0.215      | +0.000
+ sol_10 | +0.193       | +0.193      | +0.000
+ sol_11 | +0.307       | +0.307      | +0.000
+ sol_12 | +0.228       | +0.228      | +0.000
+ sol_13 | +0.296       | +0.296      | +0.000
+ sol_14 | +0.328       | +0.328      | +0.000
+sol_ext_1 | +0.478       | +0.478      | +0.000
+sol_int_1 | +0.346       | +0.346      | +0.000
+sol_int_6 | +0.668       | +0.668      | +0.000
 
 RANKING PROMETHEE II:
 ------------------------------
 Posição | Solução | Fluxo Líquido
- 1       | sol_ext_1   | +0.0000
- 2       | sol_ext_2   | +0.0000
- 3       | sol_bal_1   | +0.0000
- 4       | sol_bal_2   | +0.0000
- 5       | sol_bal_3   | +0.0000
- 6       | sol_bal_4   | +0.0000
- 7       | sol_bal_5   | +0.0000
- 8       | sol_bal_6   | +0.0000
- 9       | sol_bal_7   | +0.0000
-10       | sol_bal_8   | +0.0000
-11       | sol_int_1   | +0.0000
-12       | sol_int_2   | +0.0000
-13       | sol_int_3   | +0.0000
-14       | sol_int_5   | +0.0000
-15       | sol_int_6   | +0.0000
+ 1       | sol_10   | +0.0000
+ 2       | sol_11   | +0.0000
+ 3       | sol_12   | +0.0000
+ 4       | sol_13   | +0.0000
+ 5       | sol_14   | +0.0000
+ 6       | sol_ext_1   | +0.0000
+ 7       | sol_int_1   | +0.0000
+ 8       | sol_int_6   | +0.0000
 
 MELHOR SOLUÇÃO (PROMETHEE):
 ------------------------------
-Solução: sol_ext_1
+Solução: sol_10
 Fluxo Líquido: +0.0000
 
 ============================================================
 4. COMPARAÇÃO ENTRE MÉTODOS
 ============================================================
-Método AHP escolheu: sol_bal_8
-Método PROMETHEE escolheu: sol_ext_1
+Método AHP escolheu: sol_ext_1
+Método PROMETHEE escolheu: sol_10
 
 ⚠ DIVERGÊNCIA: Os métodos escolheram soluções diferentes.
 
@@ -187,8 +166,8 @@ CARACTERÍSTICAS DA SOLUÇÃO ESCOLHIDA:
 ----------------------------------------
 Distância Total: 1800.0 km
 Número de Equipes: 6
-Confiabilidade: 0.7%
-Robustez/Balanceamento: 0.797
+Facilidade de Implementação: 0.726
+Impacto Social: 0.522
 
 LIMITAÇÕES DOS MÉTODOS:
 ----------------------------------------
@@ -207,7 +186,7 @@ INTERPRETAÇÃO PRÁTICA:
 Esta solução representa o melhor equilíbrio entre:
   • Minimização da distância total percorrida pelas equipes
   • Minimização do número de equipes (custos operacionais)
-  • Maximização da confiabilidade perante variações
-  • Maximização do balanceamento de carga entre equipes
+  • Maximização da facilidade de implementação
+  • Maximização do impacto social positivo
 
 A solução escolhida oferece robustez e eficiência para aplicação prática.

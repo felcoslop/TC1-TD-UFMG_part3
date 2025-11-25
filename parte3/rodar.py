@@ -9,10 +9,10 @@ Métodos implementados:
 - PROMETHEE II: Sobreclassificação com fluxos de preferência
 
 Critérios de decisão:
-- f1: Distância total (minimizar)
-- f2: Número de equipes (minimizar)
-- f3: Confiabilidade (maximizar) - atributo adicional gerado sinteticamente
-- f4: Robustez/Balanceamento (maximizar) - atributo adicional gerado sinteticamente
+    - f1: Distância total (minimizar)
+    - f2: Número de equipes (minimizar)
+    - f3: Facilidade de Implementação (maximizar) - atributo adicional independente
+    - f4: Impacto Social (maximizar) - atributo adicional independente
 """
 
 import numpy as np
@@ -73,7 +73,7 @@ def main():
         print("Atributos adicionais gerados (f3, f4)")
 
         # Salvar dados em CSV
-        dados_decisao.salvar_dados("parte3/resultados/dados_decisao.csv")
+        dados_decisao.salvar_dados("resultados/dados_decisao.csv")
         print()
 
         # 2. Executar método AHP
@@ -134,7 +134,7 @@ def main():
         print("Gerando relatório completo...")
         relatorio = relatorios.gerar_relatorio_completo(
             df_decisao, resultados_ahp, resultados_promethee,
-            caminho="parte3/resultados/relatorios/relatorio_decisao.txt"
+            caminho="resultados/relatorios/relatorio_decisao.txt"
         )
         print(f"Relatório gerado com {len(relatorio.split(chr(10)))} linhas")
         print()
