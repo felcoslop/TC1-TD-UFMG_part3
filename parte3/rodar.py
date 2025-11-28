@@ -9,10 +9,10 @@ Métodos implementados:
 - PROMETHEE II: Sobreclassificação com fluxos de preferência
 
 Critérios de decisão:
-    - f1: Distância total (minimizar)
-    - f2: Número de equipes (minimizar)
-    - f3: Facilidade de Implementação (maximizar) - atributo adicional independente
-    - f4: Impacto Social (maximizar) - atributo adicional independente
+    - f1: Distância Total (minimizar)
+    - f2: Número de Equipes (minimizar)
+    - f3: Periculosidade Média das Bases (minimizar)
+    - f4: Índice de Dificuldade de Acesso aos Ativos (maximizar)
 """
 
 import numpy as np
@@ -52,7 +52,7 @@ def main():
     """Função principal da Parte 3."""
     print("=" * 80)
     print("PARTE 3: TOMADA DE DECISAO MULTICRITERIO")
-    print("Trabalho Computacional 1 - Teoria da Decisao")
+    print("Trabalho Computacional - Teoria da Decisao")
     print("=" * 80)
     print(f"Início: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
     print()
@@ -70,7 +70,7 @@ def main():
             return
 
         print(f"Carregadas {len(df_decisao)} solucoes candidatas")
-        print("Atributos adicionais gerados (f3, f4)")
+        print("Atributos de decisão: f1 (distância), f2 (equipes), f3 (periculosidade), f4 (acessibilidade)")
 
         # Salvar dados em CSV
         dados_decisao.salvar_dados("resultados/dados_decisao.csv")
@@ -92,6 +92,7 @@ def main():
         pontuacoes_ahp = ahp.pontuar_alternativas(matriz_decisao, resultados_ahp['vetor_prioridades'])
         melhor_ahp = ahp.selecionar_melhor_alternativa(pontuacoes_ahp, alternativas)
         resultados_ahp['melhor_alternativa'] = melhor_ahp
+        resultados_ahp['ranking'] = melhor_ahp.get('ranking', [])
 
         print(f"Melhor solucao (AHP): {melhor_ahp['alternativa']}")
         print()
@@ -117,10 +118,14 @@ def main():
         print("-" * 40)
 
         visualizador = VisualizacaoDecisao(config_visual=VISUALIZACAO_CONFIG)
+        # Passa soluções completas, bases e ativos para posicionamento geográfico
         visualizador.criar_relatorio_visual(
             df_decisao,
             resultados_ahp,
-            resultados_promethee
+            resultados_promethee,
+            solucoes_completas=dados_decisao.soluções,
+            bases_data=dados_decisao.bases_data,
+            acessibilidade_ativos=dados_decisao.acessibilidade_ativos
         )
         print()
 
@@ -156,13 +161,13 @@ def main():
             print(f"   Solução final recomendada: {melhor_ahp_final}")
         else:
             print("DIVERGENCIA: Os metodos escolheram solucoes diferentes.")
-            print("   Aplicando criterio de desempate: menor distancia (f1)")
+            print("   Aplicando criterio de desempate: menor numero de equipes (f2)")
 
             # Critério de desempate
             sol_ahp = df_decisao[df_decisao['id'] == melhor_ahp_final].iloc[0]
             sol_promethee = df_decisao[df_decisao['id'] == melhor_promethee_final].iloc[0]
 
-            if sol_ahp['f1'] <= sol_promethee['f1']:
+            if sol_ahp['f2'] <= sol_promethee['f2']:
                 escolha_final = melhor_ahp_final
                 metodo_vencedor = "AHP"
             else:

@@ -2,7 +2,7 @@
 RELATÓRIO DE TOMADA DE DECISÃO MULTICRITÉRIO
 Trabalho Computacional 1 - Teoria da Decisão
 ================================================================================
-Data de geração: 25/11/2025 14:01:37
+Data de geração: 27/11/2025 16:58:09
 
 ============================================================
 1. RESUMO DOS DADOS DE DECISÃO
@@ -12,28 +12,28 @@ Número de soluções candidatas: 8
 ESTATÍSTICAS DOS CRITÉRIOS:
 ----------------------------------------
 Distância Total (km) (Minimizar):
-  Mínimo: 1800.00
+  Mínimo: 626.67
   Máximo: 2555.29
-  Média: 2302.85
-  Desvio: 290.89
+  Média: 1040.52
+  Desvio: 662.46
 
 Número de Equipes (Minimizar):
   Mínimo: 1.00
-  Máximo: 6.00
-  Média: 2.62
-  Desvio: 1.69
+  Máximo: 8.00
+  Média: 4.50
+  Desvio: 2.45
 
-Facilidade de Implementação (Maximizar):
-  Mínimo: 0.44
-  Máximo: 0.74
-  Média: 0.62
+Periculosidade Média das Bases (Minimizar):
+  Mínimo: 2.00
+  Máximo: 2.50
+  Média: 2.22
+  Desvio: 0.17
+
+Índice de Dificuldade de Acesso (Maximizar):
+  Mínimo: 1.33
+  Máximo: 1.67
+  Média: 1.47
   Desvio: 0.11
-
-Impacto Social (Maximizar):
-  Mínimo: 0.52
-  Máximo: 0.95
-  Média: 0.70
-  Desvio: 0.15
 
 DEFINIÇÕES DETALHADAS DOS CRITÉRIOS:
 --------------------------------------------------
@@ -50,30 +50,35 @@ f₂ - NÚMERO DE EQUIPES:
   Cálculo: Determinado pelo algoritmo VNS (número de rotas)
   Importância: Custo de recursos humanos
 
-f₃ - FACILIDADE DE IMPLEMENTAÇÃO:
-  Tipo: Maximização
-  Descrição: Avaliação qualitativa da facilidade técnica e operacional
-  Cálculo: Valor atribuído independentemente (exógeno)
-  Range: 0 a 1 (normalizado)
-  Interpretação: Maior facilidade reduz riscos de projeto
+f₃ - PERICULOSIDADE MÉDIA DAS BASES:
+  Tipo: Minimização
+  Descrição: Grau médio de periculosidade das bases selecionadas na solução
+  Cálculo: Média aritmética dos graus de periculosidade de cada base ativa
+  Fórmula: f3 = Σ(periculosidade_base_i) / n_bases_selecionadas
+  Range: 0.0 a 5.0 (escala contínua)
+  Interpretação: Valor menor = operação menos arriscada
+  Fonte: Arquivo data/periculosidade_bases.csv
 
-f₄ - IMPACTO SOCIAL:
+f₄ - ÍNDICE DE DIFICULDADE DE ACESSO AOS ATIVOS:
   Tipo: Maximização
-  Descrição: Benefício percebido pela comunidade atendida
-  Cálculo: Valor atribuído independentemente (exógeno)
-  Range: 0 a 1 (normalizado)
-  Interpretação: Maior aceitação e retorno social
+  Descrição: Máximo desvio padrão de acessibilidade entre equipes
+  Cálculo: max(std_dev_acessibilidade_por_equipe)
+  Fórmula: f4 = max(σ(acessibilidade_equipe_i))
+  Range: 0.0 a 5.0 (escala contínua)
+  Interpretação: Valor maior = maior dispersão de acessibilidade
+  Objetivo: Medir heterogeneidade de dificuldade de acesso entre equipes
+  Fonte: Arquivo data/acessibilidade_ativos.csv
 
 SOLUÇÕES CANDIDATAS:
 ----------------------------------------
-  sol_10: f1=2460.5, f2=2, f3=0.638, f4=0.640
-  sol_11: f1=2460.5, f2=2, f3=0.737, f4=0.567
-  sol_12: f1=2460.5, f2=2, f3=0.561, f4=0.676
-  sol_13: f1=2555.3, f2=1, f3=0.651, f4=0.877
-  sol_14: f1=2555.3, f2=1, f3=0.510, f4=0.747
-  sol_ext_1: f1=1800.0, f2=6, f3=0.726, f4=0.522
-  sol_int_1: f1=2176.5, f2=3, f3=0.734, f4=0.582
-  sol_int_6: f1=1954.3, f2=4, f3=0.436, f4=0.955
+  pw_solucao_1: f1=2555.3, f2=1, f3=2.000, f4=1.520
+  pw_solucao_16: f1=1059.1, f2=3, f3=2.100, f4=1.490
+  pe_solucao_3: f1=781.7, f2=4, f3=2.170, f4=1.370
+  pe_solucao_4: f1=676.9, f2=5, f3=2.200, f4=1.410
+  pe_solucao_6: f1=1339.6, f2=2, f3=2.500, f4=1.670
+  pe_solucao_14: f1=634.1, f2=7, f3=2.430, f4=1.410
+  pe_solucao_16: f1=650.7, f2=6, f3=2.130, f4=1.330
+  pe_solucao_18: f1=626.7, f2=8, f3=2.230, f4=1.530
 
 ============================================================
 2. MÉTODO AHP (ANALYTIC HIERARCHY PROCESS)
@@ -87,19 +92,27 @@ Avaliação: Consistente
 
 VETOR DE PRIORIDADES (PESOS):
 ------------------------------
-  f1: 0.2105
-  f2: 0.0896
-  f3: 0.4914
-  f4: 0.2086
+  f1: 0.6049
+  f2: 0.1255
+  f3: 0.0578
+  f4: 0.2118
 
 RANKING AHP:
 ------------------------------
 Posição | Solução | Pontuação
+ 1       | pe_solucao_18   | 0.7607
+ 2       | pe_solucao_4    | 0.7275
+ 3       | pw_solucao_16   | 0.7048
+ 4       | pe_solucao_6    | 0.7007
+ 5       | pe_solucao_3    | 0.6911
+ 6       | pe_solucao_14   | 0.6785
+ 7       | pe_solucao_16   | 0.6760
+ 8       | pw_solucao_1    | 0.3016
 
 MELHOR SOLUÇÃO (AHP):
 ------------------------------
-Solução: sol_ext_1
-Pontuação: 0.6839
+Solução: pe_solucao_18
+Pontuação: 0.7607
 
 ============================================================
 3. MÉTODO PROMETHEE II
@@ -107,37 +120,37 @@ Pontuação: 0.6839
 FLUXOS DE PREFERÊNCIA:
 ------------------------------
 Solução | Fluxo Positivo | Fluxo Negativo | Fluxo Líquido
- sol_10 | +0.193       | +0.193      | +0.000
- sol_11 | +0.307       | +0.307      | +0.000
- sol_12 | +0.228       | +0.228      | +0.000
- sol_13 | +0.296       | +0.296      | +0.000
- sol_14 | +0.328       | +0.328      | +0.000
-sol_ext_1 | +0.478       | +0.478      | +0.000
-sol_int_1 | +0.346       | +0.346      | +0.000
-sol_int_6 | +0.668       | +0.668      | +0.000
+pe_solucao_4 | +0.325       | +0.036      | +0.288
+pe_solucao_16 | +0.335       | +0.054      | +0.281
+pe_solucao_14 | +0.344       | +0.072      | +0.272
+pe_solucao_18 | +0.346       | +0.090      | +0.256
+pe_solucao_3 | +0.295       | +0.306      | -0.011
+pw_solucao_16 | +0.227       | +0.438      | -0.211
+pe_solucao_6 | +0.158       | +0.519      | -0.360
+pw_solucao_1 | +0.090       | +0.605      | -0.515
 
 RANKING PROMETHEE II:
 ------------------------------
 Posição | Solução | Fluxo Líquido
- 1       | sol_10   | +0.0000
- 2       | sol_11   | +0.0000
- 3       | sol_12   | +0.0000
- 4       | sol_13   | +0.0000
- 5       | sol_14   | +0.0000
- 6       | sol_ext_1   | +0.0000
- 7       | sol_int_1   | +0.0000
- 8       | sol_int_6   | +0.0000
+ 1       | pe_solucao_4   | +0.2885
+ 2       | pe_solucao_16   | +0.2815
+ 3       | pe_solucao_14   | +0.2719
+ 4       | pe_solucao_18   | +0.2562
+ 5       | pe_solucao_3   | -0.0110
+ 6       | pw_solucao_16   | -0.2114
+ 7       | pe_solucao_6   | -0.3604
+ 8       | pw_solucao_1   | -0.5153
 
 MELHOR SOLUÇÃO (PROMETHEE):
 ------------------------------
-Solução: sol_10
-Fluxo Líquido: +0.0000
+Solução: pe_solucao_4
+Fluxo Líquido: +0.2885
 
 ============================================================
 4. COMPARAÇÃO ENTRE MÉTODOS
 ============================================================
-Método AHP escolheu: sol_ext_1
-Método PROMETHEE escolheu: sol_10
+Método AHP escolheu: pe_solucao_18
+Método PROMETHEE escolheu: pe_solucao_4
 
 ⚠ DIVERGÊNCIA: Os métodos escolheram soluções diferentes.
 
@@ -155,20 +168,24 @@ LIMITAÇÕES OBSERVADAS:
 COMPARAÇÃO DE RANKINGS (TOP 5):
 ----------------------------------------
 Pos | AHP      | PROMETHEE | Concordância
+ 1  | pe_solucao_18 | pe_solucao_4 | ✗
+ 2  | pe_solucao_4 | pe_solucao_16 | ✗
+ 3  | pw_solucao_16 | pe_solucao_14 | ✗
+ 4  | pe_solucao_6 | pe_solucao_18 | ✗
+ 5  | pe_solucao_3 | pe_solucao_3 | ✓
 
 ============================================================
 5. RECOMENDAÇÃO FINAL
 ============================================================
-SOLUÇÃO RECOMENDADA: sol_ext_1
-Justificativa: Divergência resolvida por menor distância (f1)
+SOLUÇÃO RECOMENDADA: pe_solucao_4
+Justificativa: Divergência resolvida por menor número de equipes (f2)
 
 CARACTERÍSTICAS DA SOLUÇÃO ESCOLHIDA:
 ----------------------------------------
-Distância Total: 1800.0 km
-Número de Equipes: 6
-Facilidade de Implementação: 0.726
-Impacto Social: 0.522
-
+Distância Total: 676.9 km
+Número de Equipes: 5
+Periculosidade Média: 2.20
+Índice de Dificuldade de Acesso: 1.41
 LIMITAÇÕES DOS MÉTODOS:
 ----------------------------------------
 PROMETHEE II:
@@ -186,7 +203,7 @@ INTERPRETAÇÃO PRÁTICA:
 Esta solução representa o melhor equilíbrio entre:
   • Minimização da distância total percorrida pelas equipes
   • Minimização do número de equipes (custos operacionais)
-  • Maximização da facilidade de implementação
-  • Maximização do impacto social positivo
+  • Minimização da periculosidade das bases operacionais
+  • Maximização da acessibilidade aos ativos
 
 A solução escolhida oferece robustez e eficiência para aplicação prática.

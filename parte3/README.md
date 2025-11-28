@@ -14,9 +14,9 @@ Este projeto resolve exatamente esse desafio usando **métodos de tomada de deci
 Este trabalho implementa **dois métodos clássicos de decisão multicritério** (AHP e PROMETHEE II) para escolher a melhor solução dentre as ~20 soluções não-dominadas geradas na Parte 2. O objetivo é encontrar o equilíbrio perfeito considerando:
 
 - **f1**: Distância total percorrida pelas equipes (minimizar)
-- **f2**: Número de equipes empregadas (minimizar) - sempre valor inteiro
-- **f3**: Facilidade de implementação (maximizar) - atributo independente exógeno
-- **f4**: Impacto social (maximizar) - atributo independente exógeno
+- **f2**: Número de equipes empregadas (minimizar)
+- **f3**: Confiabilidade do monitoramento (maximizar) - atributo adicional
+- **f4**: Robustez/balanceamento da solução (maximizar) - atributo adicional
 
 ### **Definição Detalhada dos Critérios**
 
@@ -32,19 +32,24 @@ Este trabalho implementa **dois métodos clássicos de decisão multicritério**
 - **Cálculo**: Determinado pelo algoritmo VNS (número de rotas/equipes)
 - **Importância**: Critério principal relacionado a custos de recursos humanos
 
-#### **f₃: Facilidade de Implementação**
+#### **f₃: Confiabilidade (%)**
 - **Tipo**: Maximização
-- **Descrição**: Avaliação qualitativa da facilidade técnica e operacional para implementar a solução
-- **Cálculo**: Valor atribuído independentemente dos critérios objetivos (f₁, f₂)
-- **Range**: 0.4 a 0.95 (normalizado)
-- **Interpretação**: Critério exógeno que representa fatores externos como infraestrutura disponível, treinamento necessário e complexidade técnica, independentemente da eficiência logística
+- **Descrição**: Probabilidade da solução se manter viável se a demanda aumentar 10%
+- **Cálculo**:
+  - **Base confiabilidade**: `0.7 + 0.2 × (f₂ - 1) / 7` (varia de 70% a 90%)
+  - **Fator eficiência**: `1 - (f₁ - 800) / (2500 - 800)` (baseado na proximidade do ótimo)
+  - **Confiança final**: `confiabilidade_base × (0.8 + 0.4 × eficiência)`
+  - **Valor final**: Limitado entre 50% e 95%, com ruído gaussiano (σ=0.05)
+- **Interpretação**: Soluções com mais equipes tendem a ser mais confiáveis devido à redundância, mas soluções eficientes (menor f₁) também contribuem para maior confiabilidade
 
-#### **f₄: Impacto Social**
+#### **f₄: Robustez/Balanceamento**
 - **Tipo**: Maximização
-- **Descrição**: Benefício percebido pela comunidade atendida pela solução de monitoramento
-- **Cálculo**: Valor atribuído independentemente dos critérios objetivos (f₁, f₂)
-- **Range**: 0.5 a 0.98 (normalizado)
-- **Interpretação**: Critério exógeno que representa fatores externos como satisfação da comunidade, melhoria da qualidade de vida e aceitação social, independentemente dos aspectos operacionais
+- **Descrição**: Medida do equilíbrio na distribuição de ativos por equipe
+- **Cálculo**:
+  - **Base balanceamento**: `0.6 + 0.3 × (f₂ - 1) / 7` (varia de 60% a 90%)
+  - **Penalidade**: `0.05 × |f₂ - round(f₂)|` (penaliza números não-inteiros de equipes)
+  - **Valor final**: Limitado entre 40% e 95%, com ruído gaussiano (σ=0.03)
+- **Interpretação**: Soluções com mais equipes tendem a ter melhor distribuição de carga. Penaliza soluções com número "estranho" de equipes que poderiam indicar balanceamento ruim.
 
 ### O Desafio Real
 - **~20 soluções candidatas** da fronteira de Pareto (Parte 2)
@@ -57,9 +62,9 @@ Este trabalho implementa **dois métodos clássicos de decisão multicritério**
 
 ### Critérios de Decisão
 - **f₁**: Distância total (km) - **minimizar** - impacto na eficiência logística
-- **f₂**: Número de equipes - **minimizar** - impacto no custo operacional (sempre inteiro)
-- **f₃**: Facilidade de implementação - **maximizar** - atributo independente exógeno
-- **f₄**: Impacto social - **maximizar** - atributo independente exógeno
+- **f₂**: Número de equipes - **minimizar** - impacto no custo operacional
+- **f₃**: Confiabilidade (%) - **maximizar** - atributo sintético baseado na distribuição geográfica
+- **f₄**: Robustez/Balanceamento - **maximizar** - atributo sintético baseado na variabilidade
 
 ### Método AHP (Analytic Hierarchy Process)
 
@@ -86,10 +91,8 @@ Cada solução recebe pontuação: Σᵢ wᵢ × vᵢⱼ (média ponderada)
 ### Método PROMETHEE II
 
 #### Funções de Preferência
-- **f₁** (minimização): Função linear com q=50km, p=150km
-- **f₂** (minimização): Função linear com q=0.5eq, p=1.5eq
-- **f₃** (maximização): Função linear com q=5, p=15 (escala 0-100)
-- **f₄** (maximização): Função linear com q=0.1, p=0.3 (escala 0-1)
+- **f₁, f₂** (minimização): Função linear com q=50km/0.5eq, p=150km/1.5eq
+- **f₃, f₄** (maximização): Função linear com q=5%/0.1, p=15%/0.3
 
 #### Índice de Preferência Global
 Para cada par (a,b): π(a,b) = Σᵢ wᵢ × Pᵢ(a,b)
@@ -195,7 +198,7 @@ TC1-TD-UFMG_part3/
 - **Dados de entrada**: ~20 soluções da Parte 2
 - **Métodos**: AHP + PROMETHEE II (execução sequencial)
 - **Análise de sensibilidade**: ±10% variação nos pesos
-- **Critérios de decisão**: 4 critérios (2 minimizar, 2 maximizar) - f2 sempre inteiro
+- **Critérios de decisão**: 4 critérios (2 minimizar, 2 maximizar)
 
 ### Parâmetros do AHP
 - **Escala de Saaty**: 1-9 para comparações par-a-par
@@ -204,9 +207,9 @@ TC1-TD-UFMG_part3/
 
 ### Parâmetros do PROMETHEE
 - **Funções de preferência**: Linear para todos os critérios
-- **Parâmetros q/p**: Configurados por critério conforme escalas
-- **Pesos**: Herdados do AHP para consistência
-- **Ranking**: Baseado em fluxo líquido (φ⁺ - φ⁻)
+- **Parâmetros q/p**: Configurados por critério
+- **Pesos**: Herdados do AHP ou configuráveis
+- **Ranking**: Baseado em fluxo líquido completo
 
 ### Alunos
 - Felipe Costa Lopes

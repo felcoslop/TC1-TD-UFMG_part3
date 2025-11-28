@@ -6,7 +6,7 @@ baseado no processo de decomposição hierárquica e comparações par-a-par.
 """
 
 import numpy as np
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Optional, Union
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -61,9 +61,6 @@ class MetodoAHP:
         """
         n = len(criterios)
         matriz = np.eye(n)  # Diagonal principal = 1
-
-        # Mapeia nomes dos critérios para índices
-        criterio_idx = {crit: i for i, crit in enumerate(criterios)}
 
         # Preenche a matriz superior usando os pesos configurados
         for i in range(n):
@@ -200,13 +197,13 @@ class MetodoAHP:
 
         # Se inconsistente, tenta ajustar
         if self.consistencia['RC'] > 0.1:
-            print(".4f")
+            print(f"Matriz inconsistente (RC={self.consistencia['RC']:.4f}). Ajustando...")
             matriz_ajustada = self.ajustar_matriz_consistente(self.matriz_criterios)
             vetor_ajustado = self.calcular_vetor_prioridades(matriz_ajustada)
             consistencia_ajustada = self.calcular_consistencia(matriz_ajustada, vetor_ajustado)
 
             if consistencia_ajustada['RC'] <= 0.1:
-                print(".4f")
+                print(f"Matriz ajustada com sucesso (RC={consistencia_ajustada['RC']:.4f})")
                 self.matriz_criterios = matriz_ajustada
                 self.vetor_prioridades = vetor_ajustado
                 self.consistencia = consistencia_ajustada
@@ -248,9 +245,13 @@ class MetodoAHP:
         Returns:
             Matriz normalizada
         """
-        # Para critérios de minimização, inverte os valores
-        # Assumimos que f1 e f2 são de minimização, f3 e f4 de maximização
-        criterios_min = [0, 1]  # índices de f1, f2
+        # Critérios de minimização vs maximização
+        # f1 (índice 0): Distância - MINIMIZAR
+        # f2 (índice 1): Equipes - MINIMIZAR
+        # f3 (índice 2): Periculosidade - MINIMIZAR
+        # f4 (índice 3): Acessibilidade - MAXIMIZAR
+        criterios_min = [0, 1, 2]  # índices de f1, f2 e f3
+        criterios_max = [3]         # índice de f4
 
         matriz_normalizada = matriz.copy().astype(float)
 
@@ -264,13 +265,20 @@ class MetodoAHP:
                     matriz_normalizada[:, j] = (col_max - coluna) / (col_max - col_min)
                 else:
                     matriz_normalizada[:, j] = 1.0  # Todos iguais
-            else:
+            elif j in criterios_max:
                 # Para maximização: valor_normalizado = (valor - min) / (max - min)
                 col_min, col_max = np.min(coluna), np.max(coluna)
                 if col_max > col_min:
                     matriz_normalizada[:, j] = (coluna - col_min) / (col_max - col_min)
                 else:
                     matriz_normalizada[:, j] = 1.0  # Todos iguais
+            else:
+                # Padrão (não deveria acontecer)
+                col_min, col_max = np.min(coluna), np.max(coluna)
+                if col_max > col_min:
+                    matriz_normalizada[:, j] = (coluna - col_min) / (col_max - col_min)
+                else:
+                    matriz_normalizada[:, j] = 1.0
 
         return matriz_normalizada
 

@@ -6,7 +6,7 @@ baseado em sobreclassificação e cálculo de fluxos de preferência.
 """
 
 import numpy as np
-from typing import Dict, List, Tuple, Optional, Union, Callable
+from typing import Dict, List, Optional, Union, Callable
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -26,7 +26,6 @@ class MetodoPROMETHEE:
             config_promethee: Configurações com parâmetros q e p para cada critério
         """
         self.config = config_promethee or {}
-        self.pesos = None
         self.funcao_preferencia = {}  # Uma função por critério
 
     def definir_funcao_preferencia(self, criterio: str, tipo: str = 'linear',
@@ -44,14 +43,16 @@ class MetodoPROMETHEE:
             Função de preferência P(diff) onde diff = val_a - val_b
         """
         if tipo == 'usual':
-            # Função usual: P(x) = 0 se |x| <= q, 1 se |x| > q
+            # Função usual (com indiferença q):
+            # P(d) = 0 se d <= q; 1 se d > q. Para d <= 0, P=0.
             def f(diff):
-                return 0.0 if abs(diff) <= q else 1.0
+                return 0.0 if diff <= q else 1.0
 
         elif tipo == 'linear':
-            # Função linear: P(x) = 0 se |x| <= q, (|x|-q)/(p-q) se q < |x| <= p, 1 se |x| > p
+            # Função linear (preferência cresce apenas para d > q):
+            # P(d) = 0 se d <= q; (d - q)/(p - q) se q < d <= p; 1 se d > p
             def f(diff):
-                x = abs(diff)
+                x = diff
                 if x <= q:
                     return 0.0
                 elif x <= p:
@@ -60,9 +61,9 @@ class MetodoPROMETHEE:
                     return 1.0
 
         elif tipo == 'level':
-            # Função level: P(x) = 0.5 se q < |x| <= p, 1 se |x| > p
+            # Função level: P(d) = 0.5 se q < d <= p; 1 se d > p; 0 se d <= q
             def f(diff):
-                x = abs(diff)
+                x = diff
                 if x <= q:
                     return 0.0
                 elif x <= p:
@@ -71,10 +72,12 @@ class MetodoPROMETHEE:
                     return 1.0
 
         elif tipo == 'vshape':
-            # Função V-shape: P(x) = |x| / p se |x| <= p, 1 se |x| > p
+            # Função V-shape: P(d) = d/p se 0 < d <= p; 1 se d > p; 0 se d <= 0
             def f(diff):
-                x = abs(diff)
-                if x <= p:
+                x = diff
+                if x <= 0:
+                    return 0.0
+                elif x <= p:
                     return x / p
                 else:
                     return 1.0
@@ -100,21 +103,15 @@ class MetodoPROMETHEE:
         config_p = config_p or {}
 
         for criterio in criterios:
-            # Parâmetros padrão baseados no critério
-            if criterio in ['f1', 'f2', 'f3', 'f4']:
-                # Valores padrão baseados na configuração
-                q_default = self.config.get('q', {}).get(criterio, 0.1)
-                p_default = self.config.get('p', {}).get(criterio, 0.3)
-            else:
-                q_default = 0.1
-                p_default = 0.3
+            # Parâmetros padrão vindos da configuração geral (inclui f4)
+            q_default = self.config.get('q', {}).get(criterio, 0.1)
+            p_default = self.config.get('p', {}).get(criterio, 0.3)
 
-            # Usa valores configurados ou padrão
+            # Usa valores configurados explicitamente ou os padrões
             q = config_q.get(criterio, q_default)
             p = config_p.get(criterio, p_default)
 
-            # Para f1, f2 (minimização): usa função linear
-            # Para f3, f4 (maximização): usa função linear também
+            # Usa função linear por padrão para todos os critérios
             self.definir_funcao_preferencia(criterio, 'linear', q, p)
 
     def calcular_indice_preferencia_global(self, alt_a: np.ndarray, alt_b: np.ndarray,
@@ -139,13 +136,19 @@ class MetodoPROMETHEE:
         for i, criterio in enumerate(criterios):
             val_a, val_b = alt_a[i], alt_b[i]
 
-            # Calcula a diferença: para maximização, val_a > val_b indica preferência por a
-            # Para minimização, val_a < val_b indica preferência por a (valores menores são melhores)
-            if criterio in ['f1', 'f2']:
+            # Calcula a diferença baseada no tipo de critério
+            # f1 (Distância): MINIMIZAR - val_a < val_b indica preferência por a
+            # f2 (Equipes): MINIMIZAR - val_a < val_b indica preferência por a
+            # f3 (Periculosidade): MINIMIZAR - val_a < val_b indica preferência por a
+            # f4 (Acessibilidade): MAXIMIZAR - val_a > val_b indica preferência por a
+            if criterio in ['f1', 'f2', 'f3']:
                 # Para minimização: se val_a < val_b, então a é preferível (x = val_b - val_a > 0)
-                diff = val_b - val_a  # Para minimização, invertemos a diferença
-            else:
+                diff = val_b - val_a
+            elif criterio in ['f4']:
                 # Para maximização: se val_a > val_b, então a é preferível (x = val_a - val_b > 0)
+                diff = val_a - val_b
+            else:
+                # Padrão: maximização
                 diff = val_a - val_b
 
             # Calcula preferência usando a diferença
@@ -187,7 +190,6 @@ class MetodoPROMETHEE:
 
             for j in range(n):
                 if i != j:
-                    alt_j = alternativas[j]
 
                     # π(i,j): quanto i é preferível a j
                     pi_ij = self.calcular_indice_preferencia_global(
@@ -290,59 +292,3 @@ class MetodoPROMETHEE:
             'funcoes_preferencia': list(self.funcao_preferencia.keys())
         }
 
-    def analisar_sensibilidade(self, matriz_decisao: np.ndarray,
-                             alternativas: List[str], criterios: List[str],
-                             pesos_base: np.ndarray, variacao: float = 0.1) -> Dict[str, List]:
-        """
-        Análise de sensibilidade variando os pesos dos critérios.
-
-        Args:
-            matriz_decisao: Matriz de decisão
-            alternativas: Lista de alternativas
-            criterios: Lista de critérios
-            pesos_base: Pesos base
-            variacao: Variação percentual dos pesos
-
-        Returns:
-            Dicionário com rankings para diferentes cenários
-        """
-        resultados = {'cenarios': []}
-
-        # Cenário base
-        promethee_base = self.executar_promethee(matriz_decisao, alternativas, criterios, pesos_base)
-        resultados['cenarios'].append({
-            'nome': 'Base',
-            'pesos': pesos_base.tolist(),
-            'melhor': promethee_base['melhor_alternativa']['alternativa'],
-            'ranking': promethee_base['ranking']
-        })
-
-        # Varia pesos de cada critério
-        for i, criterio in enumerate(criterios):
-            # Aumenta peso do critério i
-            pesos_altos = pesos_base.copy()
-            pesos_altos[i] *= (1 + variacao)
-            pesos_altos /= np.sum(pesos_altos)  # Renormaliza
-
-            promethee_alto = self.executar_promethee(matriz_decisao, alternativas, criterios, pesos_altos)
-            resultados['cenarios'].append({
-                'nome': f'{criterio} +{int(variacao*100)}%',
-                'pesos': pesos_altos.tolist(),
-                'melhor': promethee_alto['melhor_alternativa']['alternativa'],
-                'ranking': promethee_alto['ranking']
-            })
-
-            # Diminui peso do critério i
-            pesos_baixos = pesos_base.copy()
-            pesos_baixos[i] *= (1 - variacao)
-            pesos_baixos /= np.sum(pesos_baixos)  # Renormaliza
-
-            promethee_baixo = self.executar_promethee(matriz_decisao, alternativas, criterios, pesos_baixos)
-            resultados['cenarios'].append({
-                'nome': f'{criterio} -{int(variacao*100)}%',
-                'pesos': pesos_baixos.tolist(),
-                'melhor': promethee_baixo['melhor_alternativa']['alternativa'],
-                'ranking': promethee_baixo['ranking']
-            })
-
-        return resultados

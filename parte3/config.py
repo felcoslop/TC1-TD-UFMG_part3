@@ -3,41 +3,43 @@ Configurações para a Parte 3 - Tomada de Decisão Multicritério
 
 Este arquivo contém todas as configurações necessárias para executar
 a tomada de decisão usando AHP e PROMETHEE II.
+
+CRITÉRIOS DE DECISÃO:
+- f1: Distância Total
+- f2: Número de Equipes
+- f3: Periculosidade Média das Bases
+- f4: Índice de Dificuldade de Acesso aos Ativos
 """
 
-# Configurações do problema
-N_SOLUCOES_FRONTEIRA = 20  # Número de soluções para decisão multicritério
-
-# Atributos de decisão
-# f1: Distância total (km) - minimizar
-# f2: Número de equipes - minimizar
-# f3: Confiabilidade (%) - maximizar
-# f4: Robustez/Balanceamento - maximizar
 
 # Pesos para AHP (matriz de comparação par-a-par)
-# Ordem: [f1, f2, f3, f4]
+# Estrutura: comparação entre pares de critérios
 PESOS_AHP = {
-    'f1_vs_f2': 3,  # f1 é 3x mais importante que f2
-    'f1_vs_f3': 1/3,  # f3 é 3x mais importante que f1
-    'f1_vs_f4': 1,  # f1 e f4 têm mesma importância
-    'f2_vs_f3': 1/5,  # f3 é 5x mais importante que f2
-    'f2_vs_f4': 1/2,  # f4 é 2x mais importante que f2
-    'f3_vs_f4': 2,  # f3 é 2x mais importante que f4
+    'f1_vs_f2': 3,
+    'f1_vs_f3': 5,
+    'f1_vs_f4': 7,
+    'f2_vs_f3': 3,
+    'f2_vs_f4': 1/3,
+    'f3_vs_f4': 1/5,
+    'f4_vs_f2': 3,
+    'f4_vs_f3': 5,
 }
 
 # Configurações PROMETHEE
+# q: limiar de indiferença (diferenças menores são ignoradas)
+# p: limiar de preferência estrita (diferenças maiores indicam preferência clara)
 PROMETHEE_CONFIG = {
     'q': {  # Indiferença
-        'f1': 100,  # 100 km de diferença são indiferentes
-        'f2': 1.0,  # 1.0 equipes de diferença são indiferentes
-        'f3': 0.10, # 10% de diferença são indiferentes (f3 em decimal)
-        'f4': 0.10, # 10% de diferença são indiferentes (f4 em decimal)
+        'f1': 50.0,  # Distância: 50 km de diferença são indiferentes
+        'f2': 1,   # Equipes: 1 equipe de diferença são indiferentes
+        'f3': 0.5,   # Periculosidade: 0.5 de diferença são indiferentes
+        'f4': 2.0,   # Acessibilidade: 2.0 de diferença são indiferentes
     },
     'p': {  # Preferência estrita
-        'f1': 500,  # 500 km de diferença indicam preferência forte
-        'f2': 3.0,  # 3.0 equipes de diferença indicam preferência forte
-        'f3': 0.30, # 30% de diferença indicam preferência forte (f3 em decimal)
-        'f4': 0.30, # 30% de diferença indicam preferência forte (f4 em decimal)
+        'f1': 150.0, # Distância: 150 km de diferença indicam preferência forte
+        'f2': 4,   # Equipes: 4 equipes de diferença indicam preferência forte
+        'f3': 1.5,   # Periculosidade: 1.5 de diferença indicam preferência forte
+        'f4': 4.0,   # Acessibilidade: 4.0 de diferença indicam preferência forte
     }
 }
 
@@ -50,9 +52,3 @@ VISUALIZACAO_CONFIG = {
     'alpha': 0.7
 }
 
-# Configurações de teste
-TEST_CONFIG = {
-    'n_test_solutions': 5,
-    'random_seed': 42,
-    'tolerance': 1e-6
-}

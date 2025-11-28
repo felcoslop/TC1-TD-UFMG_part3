@@ -96,8 +96,8 @@ class RelatoriosDecisao:
         criterios_info = {
             'f1': ('Distância Total (km)', 'Minimizar'),
             'f2': ('Número de Equipes', 'Minimizar'),
-            'f3': ('Facilidade de Implementação', 'Maximizar'),
-            'f4': ('Impacto Social', 'Maximizar')
+            'f3': ('Periculosidade Média das Bases', 'Minimizar'),
+            'f4': ('Índice de Dificuldade de Acesso', 'Maximizar'),
         }
 
         for crit, (nome, sentido) in criterios_info.items():
@@ -126,19 +126,24 @@ class RelatoriosDecisao:
         secao.append("  Cálculo: Determinado pelo algoritmo VNS (número de rotas)")
         secao.append("  Importância: Custo de recursos humanos")
         secao.append("")
-        secao.append("f₃ - FACILIDADE DE IMPLEMENTAÇÃO:")
-        secao.append("  Tipo: Maximização")
-        secao.append("  Descrição: Avaliação qualitativa da facilidade técnica e operacional")
-        secao.append("  Cálculo: Valor atribuído independentemente (exógeno)")
-        secao.append("  Range: 0 a 1 (normalizado)")
-        secao.append("  Interpretação: Maior facilidade reduz riscos de projeto")
+        secao.append("f₃ - PERICULOSIDADE MÉDIA DAS BASES:")
+        secao.append("  Tipo: Minimização")
+        secao.append("  Descrição: Grau médio de periculosidade das bases selecionadas na solução")
+        secao.append("  Cálculo: Média aritmética dos graus de periculosidade de cada base ativa")
+        secao.append("  Fórmula: f3 = Σ(periculosidade_base_i) / n_bases_selecionadas")
+        secao.append("  Range: 0.0 a 5.0 (escala contínua)")
+        secao.append("  Interpretação: Valor menor = operação menos arriscada")
+        secao.append("  Fonte: Arquivo data/periculosidade_bases.csv")
         secao.append("")
-        secao.append("f₄ - IMPACTO SOCIAL:")
+        secao.append("f₄ - ÍNDICE DE DIFICULDADE DE ACESSO AOS ATIVOS:")
         secao.append("  Tipo: Maximização")
-        secao.append("  Descrição: Benefício percebido pela comunidade atendida")
-        secao.append("  Cálculo: Valor atribuído independentemente (exógeno)")
-        secao.append("  Range: 0 a 1 (normalizado)")
-        secao.append("  Interpretação: Maior aceitação e retorno social")
+        secao.append("  Descrição: Máximo desvio padrão de acessibilidade entre equipes")
+        secao.append("  Cálculo: max(std_dev_acessibilidade_por_equipe)")
+        secao.append("  Fórmula: f4 = max(σ(acessibilidade_equipe_i))")
+        secao.append("  Range: 0.0 a 5.0 (escala contínua)")
+        secao.append("  Interpretação: Valor maior = maior dispersão de acessibilidade")
+        secao.append("  Objetivo: Medir heterogeneidade de dificuldade de acesso entre equipes")
+        secao.append("  Fonte: Arquivo data/acessibilidade_ativos.csv")
         secao.append("")
 
         # Lista de soluções
@@ -180,9 +185,15 @@ class RelatoriosDecisao:
         ranking = resultados.get('ranking', [])
         secao.append("RANKING AHP:")
         secao.append("-" * 30)
-        secao.append("Posição | Solução | Pontuação")
-        for i, item in enumerate(ranking, 1):
-            secao.append(f"{i:2d}       | {item['alternativa']}   | {item['pontuacao']:.4f}")
+        if ranking:
+            secao.append("Posição | Solução | Pontuação")
+            for item in ranking:
+                pos = item.get('posicao', 0)
+                alt = item.get('alternativa', 'N/A')
+                pont = item.get('pontuacao', 0)
+                secao.append(f" {pos}       | {alt:15s} | {pont:.4f}")
+        else:
+            secao.append("Posição | Solução | Pontuação")
         secao.append("")
 
         # Melhor solução
@@ -303,19 +314,19 @@ class RelatoriosDecisao:
             escolha_final = melhor_ahp
             justificativa = "Concordância entre métodos"
         else:
-            # Divergência - critério adicional: menor valor de f1 (distância)
+            # Divergência - critério adicional: menor valor de f2 (número de equipes)
             sol_ahp = dados[dados['id'] == melhor_ahp] if melhor_ahp and melhor_ahp in dados['id'].values else pd.DataFrame()
             sol_promethee = dados[dados['id'] == melhor_promethee] if melhor_promethee and melhor_promethee in dados['id'].values else pd.DataFrame()
 
             if not sol_ahp.empty and not sol_promethee.empty:
                 sol_ahp = sol_ahp.iloc[0]
                 sol_promethee = sol_promethee.iloc[0]
-                if sol_ahp['f1'] <= sol_promethee['f1']:
+                if sol_ahp['f2'] <= sol_promethee['f2']:
                     escolha_final = melhor_ahp
-                    justificativa = "Divergência resolvida por menor distância (f1)"
+                    justificativa = "Divergência resolvida por menor número de equipes (f2)"
                 else:
                     escolha_final = melhor_promethee
-                    justificativa = "Divergência resolvida por menor distância (f1)"
+                    justificativa = "Divergência resolvida por menor número de equipes (f2)"
             else:
                 # Fallback para o método que conseguiu encontrar
                 if melhor_ahp and melhor_ahp in dados['id'].values:
@@ -339,9 +350,8 @@ class RelatoriosDecisao:
             secao.append("-" * 40)
             secao.append(f"Distância Total: {sol_escolhida['f1']:.1f} km")
             secao.append(f"Número de Equipes: {sol_escolhida['f2']:.0f}")
-            secao.append(f"Facilidade de Implementação: {sol_escolhida['f3']:.3f}")
-            secao.append(f"Impacto Social: {sol_escolhida['f4']:.3f}")
-        secao.append("")
+            secao.append(f"Periculosidade Média: {sol_escolhida['f3']:.2f}")
+            secao.append(f"Índice de Dificuldade de Acesso: {sol_escolhida['f4']:.2f}")
 
         # Limitações dos métodos
         secao.append("LIMITAÇÕES DOS MÉTODOS:")
@@ -363,8 +373,8 @@ class RelatoriosDecisao:
         secao.append("Esta solução representa o melhor equilíbrio entre:")
         secao.append("  • Minimização da distância total percorrida pelas equipes")
         secao.append("  • Minimização do número de equipes (custos operacionais)")
-        secao.append("  • Maximização da facilidade de implementação")
-        secao.append("  • Maximização do impacto social positivo")
+        secao.append("  • Minimização da periculosidade das bases operacionais")
+        secao.append("  • Maximização da acessibilidade aos ativos")
         secao.append("")
         secao.append("A solução escolhida oferece robustez e eficiência para aplicação prática.")
 

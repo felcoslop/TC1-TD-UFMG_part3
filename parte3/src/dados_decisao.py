@@ -22,134 +22,334 @@ class DadosDecisao:
     """
 
     def __init__(self, caminho_parte2: str = "../parte2/resultados/relatorios/",
+                 caminho_periculosidade: str = "data/periculosidade_bases.csv",
+                 caminho_acessibilidade: str = "data/acessibilidade_ativos.csv",
                  n_solucoes: int = 20, seed: int = 42):
         """
         Inicializa o carregamento de dados.
 
         Args:
             caminho_parte2: Caminho para os relatórios da Parte 2
+            caminho_periculosidade: Caminho para arquivo de periculosidade das bases
+            caminho_acessibilidade: Caminho para arquivo de acessibilidade dos ativos
             n_solucoes: Número de soluções a carregar/simular
             seed: Semente para reprodutibilidade
         """
         self.caminho_parte2 = caminho_parte2
+        self.caminho_periculosidade = caminho_periculosidade
+        self.caminho_acessibilidade = caminho_acessibilidade
         self.n_solucoes = n_solucoes
         self.seed = seed
         np.random.seed(seed)
         random.seed(seed)
 
-        # Dados das soluções
+        # Dados das soluções e coordenadas das bases
         self.soluções = None
         self.atributos = None
+        self.bases_data = None
+        self.periculosidade_bases = None
+        self.acessibilidade_ativos = None
+
+        # Carrega dados de periculosidade e acessibilidade
+        self._carregar_periculosidade_bases()
+        self._carregar_acessibilidade_ativos()
 
         # Carrega dados
         self._carregar_dados_parte2()
 
+    def _carregar_periculosidade_bases(self) -> None:
+        """
+        Carrega dados de periculosidade de cada base a partir do arquivo CSV.
+        
+        Este arquivo contém:
+        - base_id: Identificador da base (1-14)
+        - latitude: Coordenada de latitude
+        - longitude: Coordenada de longitude
+        - nome: Nome descritivo da base
+        - periculosidade_media: Grau de periculosidade médio (escala numérica)
+        """
+        try:
+            if os.path.exists(self.caminho_periculosidade):
+                self.bases_data = pd.read_csv(self.caminho_periculosidade, sep=',')
+                
+                # Cria dicionário para acesso rápido por ID
+                self.periculosidade_bases = {}
+                for _, row in self.bases_data.iterrows():
+                    base_id = int(row['base_id'])
+                    self.periculosidade_bases[base_id] = {
+                        'nome': row['nome'],
+                        'latitude': float(row['latitude']),
+                        'longitude': float(row['longitude']),
+                        'periculosidade': float(row['periculosidade_media'])
+                    }
+                
+                print(f"Carregadas periculosidades de {len(self.periculosidade_bases)} bases")
+            else:
+                print(f"Aviso: Arquivo de periculosidade não encontrado em {self.caminho_periculosidade}")
+                print("Usando periculosidades padrão (valores iguais)")
+                self.periculosidade_bases = {i: {'periculosidade': 3.0} for i in range(1, 15)}
+                
+        except Exception as e:
+            print(f"Erro ao carregar periculosidade: {e}")
+            self.periculosidade_bases = {i: {'periculosidade': 3.0} for i in range(1, 15)}
+
+    def _carregar_acessibilidade_ativos(self) -> None:
+        """
+        Carrega dados de acessibilidade dos ativos a partir do arquivo CSV.
+        
+        Este arquivo contém:
+        - ativo_id: Identificador do ativo
+        - latitude: Coordenada de latitude do ativo
+        - longitude: Coordenada de longitude do ativo
+        - acessibilidade: Índice de acessibilidade (escala 1-5)
+        """
+        try:
+            if os.path.exists(self.caminho_acessibilidade):
+                df_acessibilidade = pd.read_csv(self.caminho_acessibilidade, sep=',')
+                
+                # Cria dicionário para acesso rápido por ID
+                self.acessibilidade_ativos = {}
+                for _, row in df_acessibilidade.iterrows():
+                    ativo_id = int(row['ativo_id'])
+                    self.acessibilidade_ativos[ativo_id] = {
+                        'latitude': float(row['latitude']),
+                        'longitude': float(row['longitude']),
+                        'acessibilidade': float(row['acessibilidade'])
+                    }
+                
+                print(f"Carregadas acessibilidades de {len(self.acessibilidade_ativos)} ativos")
+            else:
+                print(f"Aviso: Arquivo de acessibilidade não encontrado em {self.caminho_acessibilidade}")
+                self.acessibilidade_ativos = {}
+                
+        except Exception as e:
+            print(f"Erro ao carregar acessibilidade: {e}")
+            self.acessibilidade_ativos = {}
+
     def _carregar_dados_parte2(self) -> None:
         """
-        Carrega soluções diversas para tomada de decisão multicritério.
-        Para melhor análise MCDA, gera soluções balanceadas e variadas.
+        Carrega soluções reais para tomada de decisão multicritério.
+        Carrega os relatórios JSON gerados pela Parte 2 com as soluções da fronteira de Pareto.
         """
         try:
             # Tenta carregar dados reais da Parte 2
-            arquivo_pw = os.path.join(self.caminho_parte2, "relatorio_pw.txt")
-            arquivo_pe = os.path.join(self.caminho_parte2, "relatorio_pe.txt")
+            # Carrega relatórios JSON gerados pela Parte 2 (relatorio_pw.json, relatorio_pe.json)
+            arquivo_pw_json = os.path.join(self.caminho_parte2, "relatorio_pw.json")
+            arquivo_pe_json = os.path.join(self.caminho_parte2, "relatorio_pe.json")
 
-            solucoes_pw = self._extrair_solucoes_arquivo(arquivo_pw)
-            solucoes_pe = self._extrair_solucoes_arquivo(arquivo_pe)
+            solucoes_pw = []
+            solucoes_pe = []
 
-            # Combina soluções de ambos os métodos e remove duplicatas
+            # Carrega apenas JSONs caso existam (contêm equipes/ativos)
+            if os.path.exists(arquivo_pw_json):
+                solucoes_pw = self._extrair_solucoes_do_json(arquivo_pw_json, fonte='pw')
+
+            if os.path.exists(arquivo_pe_json):
+                solucoes_pe = self._extrair_solucoes_do_json(arquivo_pe_json, fonte='pe')
+
+            # Combina soluções de ambos os métodos
             todas_solucoes = solucoes_pw + solucoes_pe
-            solucoes_fronteira = self._remover_solucoes_dominadas(todas_solucoes)
+            
+            # Remove duplicatas baseado em f1 e f2 (mantém primeira ocorrência)
+            solucoes_unicas_dict = {}
+            for sol in todas_solucoes:
+                chave = (round(sol['f1'], 2), round(sol['f2'], 2))
+                if chave not in solucoes_unicas_dict:
+                    solucoes_unicas_dict[chave] = sol
+            
+            todas_solucoes_sem_duplicatas = list(solucoes_unicas_dict.values())
+            
+            # Aplica não-dominância
+            solucoes_fronteira = self._remover_solucoes_dominadas(todas_solucoes_sem_duplicatas)
 
-            print(f"Carregadas {len(solucoes_fronteira)} solucoes da fronteira de Pareto")
+            print(f"Carregadas {len(solucoes_fronteira)} solucoes unicas da fronteira de Pareto")
 
-            # Para melhor análise MCDA, combina com soluções diversas
-            solucoes_diversas = self._gerar_dados_balanceados()
+            # Se conseguiu carregar soluções da fronteira, seleciona as melhores
+            if len(solucoes_fronteira) >= 5:
+                # Seleciona soluções diversas e balanceadas
+                if len(solucoes_fronteira) > self.n_solucoes:
+                    solucoes_unicas = self._selecionar_solucoes_diversas(solucoes_fronteira, self.n_solucoes)
+                else:
+                    solucoes_unicas = solucoes_fronteira
 
-            # Filtra soluções da fronteira que são muito similares (evita soluções idênticas)
-            solucoes_fronteira_filtradas = []
-            for sol_front in solucoes_fronteira:
-                # Só inclui se não for muito similar às soluções diversas
-                similar = False
-                for sol_div in solucoes_diversas:
-                    if (abs(sol_front['f1'] - sol_div['f1']) < 50 and
-                        abs(sol_front['f2'] - sol_div['f2']) < 0.5):
-                        similar = True
-                        break
-                if not similar:
-                    solucoes_fronteira_filtradas.append(sol_front)
-
-            # Combina soluções filtradas da fronteira com soluções diversas
-            solucoes_unicas = solucoes_fronteira_filtradas[:5] + solucoes_diversas  # Máximo 5 da fronteira
-
-            # Remove duplicatas finais
-            solucoes_unicas = self._remover_solucoes_dominadas(solucoes_unicas)
-
-            # Limita ao número desejado
-            if len(solucoes_unicas) > self.n_solucoes:
-                solucoes_unicas = solucoes_unicas[:self.n_solucoes]
-
-            print(f"Total de {len(solucoes_unicas)} solucoes para analise multicriterio")
+                print(f"Total de {len(solucoes_unicas)} solucoes para analise multicriterio")
+            else:
+                raise ValueError("Insuficientes soluções carregadas da fronteira")
 
         except (FileNotFoundError, ValueError) as e:
             print(f"Aviso: {e}")
-            print("Gerando conjunto diverso de solucoes para analise MCDA...")
-            solucoes_unicas = self._gerar_dados_balanceados()
+            print("Nenhum relatório JSON encontrado ou insuficientes soluções na fronteira.")
+            print("O sistema foi configurado para usar apenas dados reais; não serão gerados dados sintéticos.")
+            solucoes_unicas = []
 
         self.soluções = solucoes_unicas
-        self._gerar_atributos_adicionais()
+        # Calcula f3/f4 a partir das soluções carregadas dos JSONs
+        for sol in self.soluções:
+            # Calcula f3 (periculosidade) se possível
+            if 'equipes' in sol and sol.get('f3') is None:
+                sol['f3'] = round(self._calcular_periculosidade_das_equipes(sol['equipes']), 2)
 
-    def _extrair_solucoes_arquivo(self, arquivo: str) -> List[Dict]:
+            # Calcula f4 (acessibilidade) se possível
+            if 'equipes' in sol and sol.get('f4') is None:
+                sol['f4'] = round(self._calcular_acessibilidade_das_equipes(sol['equipes']), 2)
+
+    # NOTE: suporte a leitura de relatórios em texto foi removido.
+    # Agora o carregamento usa exclusivamente os arquivos JSON gerados
+    # pela Parte 2 (relatorio_pw.json e relatorio_pe.json) ou gera
+    # soluções sintéticas caso eles não existam.
+
+
+    def _extrair_solucoes_do_json(self, arquivo_json: str, fonte: str = 'pw') -> List[Dict]:
         """
-        Extrai soluções de um arquivo de relatório da Parte 2.
+        Extrai soluções de um relatório JSON gerado pelos scripts da Parte 2.
 
-        Args:
-            arquivo: Caminho para o arquivo de relatório
-
-        Returns:
-            Lista de dicionários com f1, f2 e metadados
+        Cada item da fronteira no JSON é esperado como um dicionário com ao menos
+        as chaves: 'f1', 'f2' e opcionalmente 'equipes' (lista com equipes, indice_base, ativos).
         """
+        import json
+
         solucoes = []
+        if not os.path.exists(arquivo_json):
+            raise FileNotFoundError(f"Arquivo JSON não encontrado: {arquivo_json}")
 
-        if not os.path.exists(arquivo):
-            raise FileNotFoundError(f"Arquivo não encontrado: {arquivo}")
+        with open(arquivo_json, 'r', encoding='utf-8') as f:
+            dados = json.load(f)
 
-        with open(arquivo, 'r', encoding='utf-8') as f:
-            linhas = f.readlines()
+        fronteira = dados.get('fronteira') if isinstance(dados, dict) else dados
+        if not fronteira:
+            return solucoes
 
-        # Procura pela seção de soluções da fronteira final
-        lendo_solucoes = False
-        for linha in linhas:
-            linha = linha.strip()
-
-            if "SOLUÇÕES DA FRONTEIRA FINAL" in linha:
-                lendo_solucoes = True
+        for idx, solucao in enumerate(fronteira):
+            try:
+                f1 = float(solucao.get('f1', 0))
+                f2 = float(solucao.get('f2', 1))
+            except Exception:
                 continue
-            elif lendo_solucoes and linha.startswith("="):
-                break
-            elif lendo_solucoes and linha and not linha.startswith("-") and "|" in linha:
-                # Tenta extrair f1 e f2 da linha (formato: "  1 |      1990.70  |         4.00")
-                try:
-                    partes = linha.split("|")
-                    if len(partes) >= 3:
-                        # Remove espaços e converte para float
-                        f1_str = partes[1].strip()
-                        f2_str = partes[2].strip()
 
-                        # Converte para float
-                        f1 = float(f1_str)
-                        f2 = float(f2_str)
+            nova = {
+                'id': f"{fonte}_solucao_{idx+1}",
+                'f1': float(f1),
+                'f2': float(f2),
+                'fonte': fonte,
+                'equipes': solucao.get('teams', [])
+            }
 
-                        solucoes.append({
-                            'id': f"sol_{len(solucoes)+1}",
-                            'f1': f1,
-                            'f2': f2,
-                            'fonte': os.path.basename(arquivo).replace("relatorio_", "").replace(".txt", "")
-                        })
-                except (ValueError, IndexError):
-                    continue
+            # Não sobrescrever f3/f4 se estiverem presentes
+            if 'f3' in solucao:
+                nova['f3'] = float(solucao['f3'])
+            if 'f4' in solucao:
+                nova['f4'] = float(solucao['f4'])
+
+            solucoes.append(nova)
 
         return solucoes
+
+    def _calcular_distancia_haversine(self, lat1, lon1, lat2, lon2):
+        """Calcula distância em quilômetros usando a fórmula de Haversine."""
+        from math import radians, sin, cos, asin, sqrt
+        lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * asin(sqrt(a))
+        return 6371.0 * c
+
+    def _encontrar_ativo_mais_proximo(self, lat, lon):
+        """Encontra o ativo mais próximo à coordenada especificada."""
+        if not self.acessibilidade_ativos:
+            return None
+        id_melhor = None
+        distancia_minima = float('inf')
+        for id_ativo, informacoes in self.acessibilidade_ativos.items():
+            distancia = self._calcular_distancia_haversine(lat, lon, informacoes['latitude'], informacoes['longitude'])
+            if distancia < distancia_minima:
+                distancia_minima = distancia
+                id_melhor = id_ativo
+        return id_melhor
+
+    def _calcular_periculosidade_das_equipes(self, equipes: List[Dict]) -> float:
+        """Calcula a periculosidade média das bases usadas pelas equipes."""
+        ids_bases = [int(e['base_index']) for e in equipes if e.get('base_index')]
+        if not ids_bases:
+            # fallback: média global
+            valores = [v.get('periculosidade', 3.0) for v in self.periculosidade_bases.values()]
+            return float(np.mean(valores)) if valores else 3.0
+        valores = []
+        for id_base in ids_bases:
+            informacao = self.periculosidade_bases.get(id_base)
+            if informacao:
+                valores.append(informacao.get('periculosidade', 3.0))
+        return float(np.mean(valores)) if valores else 3.0
+
+    def _calcular_acessibilidade_das_equipes(self, equipes: List[Dict]) -> float:
+        """
+        Calcula a acessibilidade máxima baseada no desvio padrão da acessibilidade global.
+        Utiliza o desvio padrão máximo entre todas as equipes como métrica de dispersão.
+        """
+        acessibilidades_por_equipe = []
+        
+        for equipe in equipes:
+            ativos = equipe.get('assets', []) or []
+            acessibilidades_equipe = []
+            
+            # ativos pode ser lista de dicionários, ints ou vazia
+            if ativos:
+                for ativo in ativos:
+                    # tenta extrair id_ativo
+                    id_ativo = None
+                    if isinstance(ativo, dict):
+                        # Tenta asset_index (usado nos JSONs da Parte 2)
+                        if 'asset_index' in ativo:
+                            # asset_index é 0-based, ativo_id é 1-based
+                            id_ativo = int(ativo['asset_index']) + 1
+                        elif 'ativo_id' in ativo:
+                            id_ativo = int(ativo['ativo_id'])
+                        elif 'id' in ativo:
+                            try:
+                                id_ativo = int(ativo['id'])
+                            except Exception:
+                                id_ativo = None
+                        elif 'lat' in ativo and 'lon' in ativo:
+                            # Usa coordenadas para encontrar ativo mais próximo
+                            id_ativo = self._encontrar_ativo_mais_proximo(float(ativo['lat']), float(ativo['lon']))
+                    else:
+                        # pode ser número
+                        try:
+                            id_ativo = int(ativo)
+                        except Exception:
+                            id_ativo = None
+
+                    if id_ativo and id_ativo in self.acessibilidade_ativos:
+                        acessibilidades_equipe.append(self.acessibilidade_ativos[id_ativo]['acessibilidade'])
+            
+            if acessibilidades_equipe:
+                acessibilidades_por_equipe.append(acessibilidades_equipe)
+
+        # Calcula o desvio padrão máximo entre todas as equipes
+        if not acessibilidades_por_equipe:
+            return 0.0
+
+        # Calcula desvio padrão para cada equipe
+        desvios_padroes = []
+        todas_acessibilidades = []
+        
+        for acessibilidades in acessibilidades_por_equipe:
+            todas_acessibilidades.extend(acessibilidades)
+            if len(acessibilidades) > 1:
+                desvio = float(np.std(acessibilidades))
+                desvios_padroes.append(desvio)
+
+        # Retorna o desvio padrão máximo entre equipes
+        # Se nenhuma equipe tem mais de 1 ativo, usa desvio padrão global
+        if desvios_padroes:
+            desvio_maximo = max(desvios_padroes)
+        elif todas_acessibilidades:
+            # Fallback: desvio padrão global de todos os ativos alocados
+            desvio_maximo = float(np.std(todas_acessibilidades))
+        else:
+            desvio_maximo = 0.0
+        
+        return desvio_maximo
 
     def _remover_solucoes_dominadas(self, solucoes: List[Dict]) -> List[Dict]:
         """
@@ -167,133 +367,85 @@ class DadosDecisao:
         # Converte para array para facilitar processamento
         pontos = np.array([[s['f1'], s['f2']] for s in solucoes])
 
-        # Implementa non-dominated sorting simples
+        # Implementa classificação de não-dominância simples
         nao_dominadas = []
-        for i, sol in enumerate(solucoes):
-            dominada = False
-            for j, outra in enumerate(solucoes):
+        for i, solucao in enumerate(solucoes):
+            eh_dominada = False
+            for j, outra_solucao in enumerate(solucoes):
                 if i != j:
-                    # Verifica se outra domina sol (menor f1 E menor f2)
-                    if (outra['f1'] <= sol['f1'] and outra['f2'] <= sol['f2'] and
-                        (outra['f1'] < sol['f1'] or outra['f2'] < sol['f2'])):
-                        dominada = True
+                    # Verifica se outra_solucao domina solucao (menor f1 E menor f2)
+                    if (outra_solucao['f1'] <= solucao['f1'] and outra_solucao['f2'] <= solucao['f2'] and
+                        (outra_solucao['f1'] < solucao['f1'] or outra_solucao['f2'] < solucao['f2'])):
+                        eh_dominada = True
                         break
-            if not dominada:
-                nao_dominadas.append(sol)
+            if not eh_dominada:
+                nao_dominadas.append(solucao)
 
         return nao_dominadas
 
-    def _selecionar_solucoes_distribuidas(self, solucoes: List[Dict], n_selecionar: int) -> List[Dict]:
+    def _selecionar_solucoes_diversas(self, solucoes: List[Dict], n_desejado: int) -> List[Dict]:
         """
-        Seleciona soluções bem distribuídas ao longo da fronteira usando crowding distance.
-
+        Seleciona n_desejado soluções diversas da fronteira de Pareto.
+        
+        Estratégia:
+        - Sempre inclui extremos (menor f1, menor f2)
+        - Distribui restante uniformemente pelo espaço f1-f2
+        - Prioriza soluções com maior "spread" (distância entre vizinhos)
+        
         Args:
             solucoes: Lista de soluções não-dominadas
-            n_selecionar: Número de soluções a selecionar
-
-        Returns:
-            Lista de soluções selecionadas
-        """
-        if len(solucoes) <= n_selecionar:
-            return solucoes
-
-        # Calcula crowding distance aproximada
-        pontos = np.array([[s['f1'], s['f2']] for s in solucoes])
-
-        # Normaliza pontos
-        f1_min, f1_max = pontos[:, 0].min(), pontos[:, 0].max()
-        f2_min, f2_max = pontos[:, 1].min(), pontos[:, 1].max()
-
-        pontos_norm = np.column_stack([
-            (pontos[:, 0] - f1_min) / (f1_max - f1_min) if f1_max > f1_min else pontos[:, 0],
-            (pontos[:, 1] - f2_min) / (f2_max - f2_min) if f2_max > f2_min else pontos[:, 1]
-        ])
-
-        # Calcula crowding distance
-        crowding_distances = []
-        for i in range(len(pontos_norm)):
-            # Distâncias para os vizinhos mais próximos
-            dists = []
-            for j in range(len(pontos_norm)):
-                if i != j:
-                    dist = np.sqrt(np.sum((pontos_norm[i] - pontos_norm[j])**2))
-                    dists.append(dist)
-
-            # Crowding distance é o mínimo das distâncias
-            crowding_distances.append(min(dists) if dists else 0)
-
-        # Seleciona soluções com maior crowding distance
-        indices_ordenados = np.argsort(crowding_distances)[::-1]  # Maior para menor
-        indices_selecionados = indices_ordenados[:n_selecionar]
-
-        return [solucoes[i] for i in indices_selecionados]
-
-    def _gerar_dados_sinteticos(self) -> List[Dict]:
-        """
-        Gera dados sintéticos para teste quando não há dados da Parte 2.
-
-        Returns:
-            Lista de soluções sintéticas
-        """
-        print("Gerando dados sinteticos para teste...")
-
-        solucoes = []
-        for i in range(self.n_solucoes):
-            # Gera pontos ao longo de uma fronteira de Pareto convexa
-            # f1 varia de ~800 a ~2500 km
-            # f2 varia de 1 a 8 equipes
-            # Trade-off: mais equipes = menos distância
-
-            # Distribuição não-uniforme para simular fronteira real
-            t = i / (self.n_solucoes - 1)  # 0 a 1
-
-            # Função convexa: f2 alto → f1 baixo, f2 baixo → f1 alto
-            f2_float = 1 + 7 * t  # 1 a 8 equipes (float para cálculo)
-            f1 = 2500 - 1700 * (f2_float - 1) / 7  # 2500 km quando f2=1, ~800 km quando f2=8
-
-            # Adiciona variação realista
-            f1 += np.random.normal(0, 50)
-            
-            # Garante número inteiro de equipes
-            f2 = int(round(max(1, min(8, f2_float + np.random.normal(0, 0.2)))))
-
-            solucoes.append({
-                'id': f'sint_{i+1:02d}',
-                'f1': round(f1, 2),
-                'f2': int(f2),
-                'fonte': 'sintetico'
-            })
-
-        return solucoes
-
-    def _gerar_atributos_adicionais(self) -> None:
-        """
-        Gera atributos adicionais conflitantes para tomada de decisão.
+            n_desejado: Número de soluções a selecionar
         
-        Conforme solicitado, estes atributos são independentes da função objetivo (f1 e f2),
-        representando critérios exógenos ao modelo matemático.
-
-        f3 (Facilidade de Implementação): Avaliação subjetiva (0-1)
-        f4 (Impacto Social): Avaliação do benefício social (0-1)
+        Returns:
+            Lista com n_desejado soluções selecionadas
         """
-        print("Gerando atributos adicionais independentes para tomada de decisao...")
-
-        for sol in self.soluções:
-            # f3: Facilidade de Implementação (maximizar)
-            # Gerado aleatoriamente para simular um critério independente
-            # Valores entre 0.4 e 0.95
-            sol['f3'] = round(np.random.uniform(0.4, 0.95), 3)
-
-            # f4: Impacto Social (maximizar)
-            # Gerado aleatoriamente para simular um critério independente
-            # Valores entre 0.5 e 0.98
-            sol['f4'] = round(np.random.uniform(0.5, 0.98), 3)
-
-        print(f"Atributos independentes gerados para {len(self.soluções)} solucoes")
+        if len(solucoes) <= n_desejado:
+            return solucoes
+        
+        # Ordena por f1 (distância)
+        solucoes_ordenadas = sorted(solucoes, key=lambda x: x['f1'])
+        
+        selecionadas = []
+        
+        # 1. Inclui extremo de menor f1 (melhor distância)
+        selecionadas.append(solucoes_ordenadas[0])
+        
+        # 2. Inclui extremo de menor f2 (menor número de equipes)
+        sol_menor_f2 = min(solucoes, key=lambda x: x['f2'])
+        if sol_menor_f2 not in selecionadas:
+            selecionadas.append(sol_menor_f2)
+        
+        # 3. Inclui extremo de maior f1 (pior distância, mas pode ter vantagens em f2/f3/f4)
+        if solucoes_ordenadas[-1] not in selecionadas:
+            selecionadas.append(solucoes_ordenadas[-1])
+        
+        # 4. Seleciona intermediários distribuídos uniformemente
+        restantes = [s for s in solucoes_ordenadas if s not in selecionadas]
+        n_intermediarias = n_desejado - len(selecionadas)
+        
+        if n_intermediarias > 0 and restantes:
+            # Calcula índices uniformemente espaçados
+            step = len(restantes) / (n_intermediarias + 1)
+            indices = [int((i + 1) * step) for i in range(n_intermediarias)]
+            
+            for idx in indices:
+                if idx < len(restantes):
+                    selecionadas.append(restantes[idx])
+        
+        # Ordena selecionadas por f1 para facilitar visualização
+        selecionadas_ordenadas = sorted(selecionadas, key=lambda x: x['f1'])
+        
+        return selecionadas_ordenadas
 
     def obter_matriz_decisao(self) -> Tuple[np.ndarray, List[str], List[str]]:
         """
         Retorna a matriz de decisão completa.
+        
+        Inclui todos os 4 critérios de decisão:
+        - f1: Distância total (minimizar)
+        - f2: Número de equipes (minimizar)
+        - f3: Periculosidade média das bases ativas (minimizar)
+        - f4: Índice de Dificuldade de Acesso aos Ativos (maximizar)
 
         Returns:
             Tupla com (matriz_decisao, nomes_alternativas, nomes_criterios)
@@ -302,234 +454,38 @@ class DadosDecisao:
             raise ValueError("Nenhuma solução carregada")
 
         # Nomes das alternativas e critérios
-        alternativas = [sol['id'] for sol in self.soluções]
-        criterios = ['f1', 'f2', 'f3', 'f4']
+        alternativas = [solucao['id'] for solucao in self.soluções]
+        criterios = ['f1', 'f2', 'f3', 'f4']  # Todos os critérios
 
         # Monta matriz de decisão (alternativas x critérios)
-        matriz = np.array([[sol[c] for c in criterios] for sol in self.soluções])
+        matriz = np.array([[solucao[criterio] for criterio in criterios] for solucao in self.soluções])
 
         return matriz, alternativas, criterios
 
     def obter_dataframe(self) -> pd.DataFrame:
         """
-        Retorna os dados em formato DataFrame para análise.
+        Retorna os dados em formato DataFrame para análise (apenas colunas essenciais).
 
         Returns:
-            DataFrame com todas as soluções e atributos
+            DataFrame com id, f1, f2, f3, f4, fonte
         """
         if not self.soluções:
             return pd.DataFrame()
 
-        return pd.DataFrame(self.soluções)
+        # Cria DataFrame apenas com colunas essenciais (remove 'equipes' com coordenadas)
+        dados_limpos = []
+        for sol in self.soluções:
+            dados_limpos.append({
+                'id': sol['id'],
+                'f1': sol['f1'],
+                'f2': sol['f2'],
+                'f3': sol['f3'],  # Soma global de periculosidade
+                'f4': sol['f4'],  # Max desvio padrão de acessibilidade
+                'fonte': sol['fonte']
+            })
+        
+        return pd.DataFrame(dados_limpos)
 
-    def _gerar_solucoes_balanceadas(self, solucoes_fronteira: List[Dict]) -> List[Dict]:
-        """
-        Gera soluções balanceadas baseadas nas soluções da fronteira de Pareto.
-        Cria soluções do interior do espaço de busca que são mais práticas para decisão.
-
-        Args:
-            solucoes_fronteira: Soluções da fronteira de Pareto
-
-        Returns:
-            Lista de soluções balanceadas adicionais
-        """
-        if not solucoes_fronteira:
-            return []
-
-        # Extrai valores extremos
-        f1_vals = [s['f1'] for s in solucoes_fronteira]
-        f2_vals = [s['f2'] for s in solucoes_fronteira]
-
-        f1_min, f1_max = min(f1_vals), max(f1_vals)
-        f2_min, f2_max = min(f2_vals), max(f2_vals)
-
-        solucoes_balanceadas = []
-
-        # Gera soluções balanceadas em uma grade regular
-        # Evita soluções muito extremas (1 equipe com distância alta)
-        n_pontos = 12  # Número maior de pontos para mais diversidade
-
-        for i in range(1, n_pontos):
-            for j in range(1, n_pontos):
-                # Distribuição mais uniforme para maior diversidade
-                # f1: distribuição uniforme entre min e max
-                f1_weight = i / n_pontos
-                f1_val = f1_min + (f1_max - f1_min) * f1_weight
-
-                # f2: distribuição uniforme, mas com peso para soluções de 2-5 equipes
-                f2_weight = j / n_pontos
-                # Mapeia para equipes de 2 a 5 (evitando 1 equipe)
-                f2_val = 2 + (5 - 2) * f2_weight
-
-                # Converte para valores discretos apropriados
-                f1_rounded = round(f1_val, 1)
-                f2_rounded = max(2, int(round(f2_val)))  # Mínimo 2 equipes
-
-                # Evita soluções muito extremas
-                if f2_rounded == 1 and f1_rounded > f1_max * 0.9:
-                    continue  # Pula soluções com 1 equipe e distância muito alta
-
-                # Cria solução balanceada
-                sol_balanceada = {
-                    'id': f'sol_bal_{len(solucoes_balanceadas)+1}',
-                    'f1': f1_rounded,
-                    'f2': f2_rounded,
-                    'fonte': 'balanceada'
-                }
-
-                solucoes_balanceadas.append(sol_balanceada)
-
-        # Remove duplicatas aproximadas (menos restritivo)
-        solucoes_unicas = []
-        for sol in solucoes_balanceadas:
-            # Verifica se já existe uma solução muito similar
-            similar = False
-            for existente in solucoes_fronteira + solucoes_unicas:
-                if (abs(sol['f1'] - existente['f1']) < 25 and  # Menos restritivo
-                    abs(sol['f2'] - existente['f2']) < 0.1):  # Menos restritivo
-                    similar = True
-                    break
-            if not similar:
-                solucoes_unicas.append(sol)
-
-        return solucoes_unicas
-
-    def _selecionar_solucoes_balanceadas(self, solucoes: List[Dict], n_desejado: int) -> List[Dict]:
-        """
-        Seleciona soluções de forma balanceada, priorizando diversidade.
-
-        Args:
-            solucoes: Lista de soluções disponíveis
-            n_desejado: Número desejado de soluções
-
-        Returns:
-            Lista selecionada de soluções
-        """
-        if len(solucoes) <= n_desejado:
-            return solucoes
-
-        # Separa soluções da fronteira das balanceadas
-        fronteira = [s for s in solucoes if s.get('fonte') != 'balanceada']
-        balanceadas = [s for s in solucoes if s.get('fonte') == 'balanceada']
-
-        # Mantém pelo menos algumas soluções da fronteira (as mais equilibradas)
-        n_fronteira = min(len(fronteira), max(5, n_desejado // 2))
-        n_balanceadas = n_desejado - n_fronteira
-
-        # Seleciona soluções da fronteira mais equilibradas
-        if fronteira:
-            # Ordena por equilíbrio (distância do centro ideal)
-            f1_vals = [s['f1'] for s in fronteira]
-            f2_vals = [s['f2'] for s in fronteira]
-            f1_centro = (min(f1_vals) + max(f1_vals)) / 2
-            f2_centro = (min(f2_vals) + max(f2_vals)) / 2
-
-            fronteira.sort(key=lambda s: ((s['f1'] - f1_centro)/f1_centro)**2 +
-                                         ((s['f2'] - f2_centro)/f2_centro)**2)
-            fronteira_selecionadas = fronteira[:n_fronteira]
-        else:
-            fronteira_selecionadas = []
-
-        # Seleciona soluções balanceadas diversas
-        if balanceadas and n_balanceadas > 0:
-            # Usa clustering simples para diversidade
-            from sklearn.cluster import KMeans
-            import numpy as np
-
-            X = np.array([[s['f1'], s['f2']] for s in balanceadas])
-            n_clusters = min(n_balanceadas, len(balanceadas))
-
-            if n_clusters > 1:
-                kmeans = KMeans(n_clusters=n_clusters, random_state=self.seed, n_init=10)
-                labels = kmeans.fit_predict(X)
-
-                # Seleciona uma solução por cluster (a mais próxima do centroide)
-                balanceadas_selecionadas = []
-                for cluster_id in range(n_clusters):
-                    cluster_sols = [s for s, label in zip(balanceadas, labels) if label == cluster_id]
-                    if cluster_sols:
-                        centroide = kmeans.cluster_centers_[cluster_id]
-                        # Seleciona solução mais próxima do centroide
-                        sol_mais_proxima = min(cluster_sols,
-                                             key=lambda s: (s['f1'] - centroide[0])**2 +
-                                                          (s['f2'] - centroide[1])**2)
-                        balanceadas_selecionadas.append(sol_mais_proxima)
-            else:
-                balanceadas_selecionadas = balanceadas[:n_balanceadas]
-        else:
-            balanceadas_selecionadas = []
-
-        return fronteira_selecionadas + balanceadas_selecionadas
-
-    def _gerar_dados_balanceados(self) -> List[Dict]:
-        """
-        Gera dados sintéticos diversos simulando uma fronteira de Pareto variada.
-        Cria soluções distribuídas em todo o espaço de decisão para melhor análise MCDA.
-
-        Returns:
-            Lista de soluções sintéticas diversas
-        """
-        solucoes = []
-
-        # Simula uma fronteira de Pareto mais realista com diferentes trade-offs
-        # Gera soluções que representam diferentes pontos na fronteira
-
-        # Soluções extremas (ótimas em um critério)
-        solucoes_extremas = [
-            {'id': 'sol_ext_1', 'f1': 1800, 'f2': 6, 'fonte': 'sintetica_extrema'},  # Baixa distância, muitas equipes
-            {'id': 'sol_ext_2', 'f1': 2800, 'f2': 2, 'fonte': 'sintetica_extrema'},  # Alta distância, poucas equipes
-        ]
-
-        # Soluções balanceadas (trade-offs moderados)
-        solucoes_balanceadas = []
-        for i in range(8):
-            # Cria trade-off não-linear típico de problemas reais
-            f2_base = 2 + i * 0.5  # Base para cálculo
-            f2 = int(round(f2_base))  # Inteiro: 2, 3, 4...
-            
-            # Distância aumenta com menos equipes (relação realista)
-            f1 = 1800 + (8 - f2_base) * 150  # Distância cresce com menos equipes
-
-            sol = {
-                'id': f'sol_bal_{i+1}',
-                'f1': round(f1 + np.random.normal(0, 30), 1),  # Variação natural
-                'f2': int(f2),
-                'fonte': 'sintetica_balanceada'
-            }
-            solucoes_balanceadas.append(sol)
-
-        # Soluções intermediárias adicionais para mais diversidade
-        solucoes_intermediarias = []
-        for i in range(6):
-            f2_base = 3 + i * 0.3  # Entre 3 e 5 equipes
-            f2 = int(round(f2_base))
-            
-            f1 = 2000 + (5 - f2_base) * 100 + np.random.normal(0, 50)
-
-            sol = {
-                'id': f'sol_int_{i+1}',
-                'f1': round(max(1800, min(2800, f1)), 1),
-                'f2': int(f2),
-                'fonte': 'sintetica_intermediaria'
-            }
-            solucoes_intermediarias.append(sol)
-
-        # Combina todas as soluções
-        solucoes = solucoes_extremas + solucoes_balanceadas + solucoes_intermediarias
-
-        # Remove duplicatas muito próximas
-        solucoes_unicas = []
-        for sol in solucoes:
-            similar = False
-            for existente in solucoes_unicas:
-                if (abs(sol['f1'] - existente['f1']) < 20 and
-                    abs(sol['f2'] - existente['f2']) < 0.2):
-                    similar = True
-                    break
-            if not similar:
-                solucoes_unicas.append(sol)
-
-        return solucoes_unicas[:self.n_solucoes]
 
     def salvar_dados(self, caminho: str = "resultados/dados_decisao.csv") -> None:
         """
